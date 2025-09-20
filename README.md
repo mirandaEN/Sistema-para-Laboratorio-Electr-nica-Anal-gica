@@ -56,7 +56,9 @@ python3 app.py
 **Notas importantes**
 - El sistema **no** permite números en los nombres de usuario.
 - Los campos de usuario y contraseña tienen límite de 50 caracteres (controlado desde el frontend).
-- Todos los correos institucionales deben empezar con la letra "l" seguida del número de control.
+- El campo de número de control tiene limite de 9 caracteres válidos.
+- El campo de correo solo permite 100 caracteres válidos.
+- El sistema **no** permite dejar campos nulos o en blanco.
 
 
 **Ejemplo de uso**
