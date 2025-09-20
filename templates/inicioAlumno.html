@@ -1,0 +1,38 @@
+<html>
+  <head>
+    <link rel="stylesheet" type="text/css" href="static/css/stile.css" />
+    <title>Registro Alumno</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap"
+      rel="stylesheet"
+    />
+    <meta charset="utf-8" />
+  </head>
+
+  <body>
+    <div class="container">
+      <div class="left">
+        <img src="static/sources/itislogo.png" alt="Logo ITS" class="Logo" />
+        <h1>Instituto Tecnológico de Saltillo</h1>
+        <h2>
+          Laboratorio de <br />
+          Electrónica / Analógica
+        </h2>
+      </div>
+
+      <div class="right">
+        <div class="text">Registra tus datos para continuar</div>
+        <h2>Registro Alumnos</h2>
+        
+        <form method="POST">
+          <input type="text" name="nombre" placeholder="Nombre..." required />
+          <input type="text" name="numero_control" placeholder="Número de control..." required />
+          <input type="email" name="correo" placeholder="Correo Institucional..." required />
+          <button type="submit">Registrarse</button>
+        </form>
+      </div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,100 @@
+/* Fuente general */
+body {
+  margin: 0;
+  font-family: 'Open Sans', sans-serif;
+  background: #fff;
+}
+
+/* Contenedor principal (lado izquierdo y derecho) */
+.container {
+  display: flex;
+  height: 100vh;
+  align-items: center;
+  justify-content: center; /* Centra los bloques */
+  padding: 20px;
+  gap: 50px; /* espacio entre izquierda y derecha */
+}
+
+/* Sección izquierda */
+.left {
+  flex: 1;
+  text-align: center;
+}
+
+.left .Logo {
+  width: 180px; /* tamaño más grande pero proporcional */
+  max-width: 90%; /* no se pase de la pantalla */
+  height: auto;
+  margin-bottom: 20px;
+}
+
+.left h1 {
+  font-size: 28px;
+  font-weight: 600;
+  margin-bottom: 15px;
+}
+
+.left h2 {
+  font-size: 22px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: #333;
+}
+
+/* Sección derecha (login) */
+.right {
+  flex: 1;
+  max-width: 400px; /* ancho más controlado */
+  background-color: #8a3d3d; /* color rojo vino */
+  padding: 60px 40px; /* menos padding para no exagerar */
+  border-radius: 10px;
+  color: white;
+  text-align: center;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2); /* efecto sombra */
+}
+
+.right h2 {
+  margin-bottom: 30px;
+  font-weight: 600;
+  font-size: 24px;
+}
+
+/* Inputs y botón */
+form input {
+  display: block;
+  width: 90%; /* más ancho */
+  margin: 15px auto;
+  padding: 14px;
+  font-size: 16px;
+  border: none;
+  border-radius: 5px;
+}
+
+form button {
+  background-color: #6e1e1e;
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
+  padding: 14px 0;
+  border: none;
+  border-radius: 7px;
+  cursor: pointer;
+  width: 50%; /* botón más grande y visible */
+  margin-top: 20px;
+}
+
+form button:hover {
+  background-color: #5a1717;
+}
+
+/* Mensajes flash */
+.flash-messages {
+  list-style: none;
+  padding: 0;
+  margin-top: 15px;
+}
+
+.flash-messages li {
+  font-size: 14px;
+  color: #ffdddd;
+}
