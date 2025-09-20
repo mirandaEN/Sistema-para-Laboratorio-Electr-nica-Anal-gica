@@ -13,7 +13,7 @@ db_user = 'JEFE_LAB'
 db_password = 'jefe123'
 dsn = 'localhost:1521/XEPDB1'
 
-# ---------- FUNCIONES ----------
+#FUNCIONES
 
 def validar_usuario(usuario, contrasena):
     """Valida login y devuelve tipo si usuario y contraseña son correctos"""
@@ -67,7 +67,7 @@ def registrar_alumno(nombre, numero_control, correo):
         print("Error al insertar alumno:", e)
         return False
 
-# ---------- RUTAS ----------
+# RUTAS JEFE/AUXILIAR
 
 @app.route("/", methods=["GET", "POST"])
 def login():
@@ -82,7 +82,7 @@ def login():
             mensaje = "El usuario solo puede contener letras"
             return render_template("inicioAdmin.html", mensaje=mensaje)
 
-        # Casos de mensajes
+        # Casos de prueba
         if not usuario and not contrasena:
             mensaje = "Ingresa tu usuario y contraseña"
         elif usuario and not contrasena:
@@ -135,7 +135,7 @@ def registro_alumno():
 
     return render_template("inicioAlumno.html", mensaje=mensaje)
 
-# ---------- EJECUCIÓN ----------
+# EJECUCIÓN
 
 if __name__ == "__main__":
     app.run(debug=True)
