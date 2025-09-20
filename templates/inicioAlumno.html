@@ -7,12 +7,27 @@
         body {
             font-family: Arial, sans-serif;
             text-align: center;
-            background-color: #f0f2f5;
+            background-color: #8a3d3d;
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            padding: 15px 25px;
+            background: transparent; 
+        }
+
+        header img {
+            width: 100px; 
+            height: auto;
         }
 
         h1 {
-            margin-top: 30px;
-            color: #333;
+            margin-top: 20px;
+            color: #fff; 
         }
 
         .form-container {
@@ -21,10 +36,10 @@
             margin: 30px auto;
             width: 40%;
             border-radius: 12px;
-            box-shadow: 0px 4px 10px rgba(0,0,0,0.1);
+            box-shadow: 0px 4px 10px rgba(0,0,0,0.2);
         }
 
-        input, button {
+        input, button, select {
             width: 90%;
             padding: 12px;
             margin: 10px 0;
@@ -58,12 +73,12 @@
         }
 
         .flash.success {
-            background: #28a745; /* verde */
+            background: #28a745;
             color: white;
         }
 
         .flash.error {
-            background: #dc3545; /* rojo */
+            background: #dc3545;
             color: white;
         }
 
@@ -76,9 +91,14 @@
     </style>
 </head>
 <body>
+    
+    <header>
+        <img src="static/sources/itislogo.png" alt="Logo ITS">
+    </header>
+
     <h1>Registro de Alumnos</h1>
 
-    <!-- Mostrar mensajes flash -->
+    
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
         {% for category, msg in messages %}
@@ -89,11 +109,56 @@
 
     <div class="form-container">
         <form method="POST">
-            <input type="text" name="nombre" placeholder="Nombre completo" required><br>
-            <input type="text" name="numero_control" placeholder="Número de control" required><br>
-            <input type="email" name="correo" placeholder="Correo electrónico" required><br>
-            <input type="text" name="carrera" placeholder="Especialidad" required><br>
-            <input type="number" name="semestre" placeholder="Semestre" required><br>
+          <input type="text" 
+          name="nombre" 
+          placeholder="Nombre completo"
+          required 
+          maxlength="50"
+          pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ ]+"
+          title="El nombre solo puede contener letras y espacios"><br>
+
+          <input type="text" 
+            name="numero_control" 
+            placeholder="Número de control"
+            required 
+            maxlength="9" 
+            pattern="[0-9]{9}"
+            title="El número de control debe contener exactamente 9 dígitos numéricos"><br>
+
+          <input type="email" 
+            name="correo" 
+            placeholder="Correo electrónico"
+            required 
+            maxlength="100"
+            title="Debe ingresar un correo válido"><br>
+
+            <select id="carrera" name="carrera" >
+                <option value="">Selecciona tu carrera</option>
+                <option value="sistemas">Sistemas</option>
+                <option value="industrial">Industrial</option>
+                <option value="gestion">Gestión</option>
+                <option value="materiales">Materiales</option>
+                <option value="electronica">Electrónica</option>
+                <option value="mecatronica">Mecatrónica</option>
+                <option value="electrica">Eléctrica</option>
+                <option value="mecanica">Mecánica</option>
+            </select>
+            <select id="semestre" name="semestre" >
+                <option value="">Selecciona tu semestre</option>
+                <option value="1">1. Primero</option>
+                <option value="2">2. Segundo</option>
+                <option value="3">3. Tercero</option>
+                <option value="4">4. Cuarto</option>
+                <option value="5">5. Quinto</option>
+                <option value="6">6. Sexto</option>
+                <option value="7">7. Séptimo</option>
+                <option value="8">8. Octavo</option>
+                <option value="9">9. Noveno</option>
+                <option value="10">10. Décimo</option>
+                <option value="11">11. Undécimo</option>
+                <option value="12">12. Duodécimo</option>
+                <option value="13">13. Décimo Tercero</option>
+            </select>
             <button type="submit">Registrar</button>
         </form>
     </div>
