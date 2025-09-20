@@ -1,170 +1,117 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>Registro de Alumnos</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            background-color: #8a3d3d;
-            margin: 0;
-            padding: 0;
-        }
+  <meta charset="UTF-8">
+  <title>Registro de Alumnos</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #8a3d3d;
+      margin: 0;
+      padding: 0;
+    }
 
-        header {
-            display: flex;
-            justify-content: flex-end;
-            align-items: center;
-            padding: 15px 25px;
-            background: transparent; 
-        }
+    header {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      padding: 15px 25px;
+    }
 
-        header img {
-            width: 100px; 
-            height: auto;
-        }
+    header img {
+      width: 100px;
+      height: auto;
+    }
 
-        h1 {
-            margin-top: 20px;
-            color: #fff; 
-        }
+    h1 { color: #fff; margin-top: 20px; }
 
-        .form-container {
-            background: white;
-            padding: 25px;
-            margin: 30px auto;
-            width: 40%;
-            border-radius: 12px;
-            box-shadow: 0px 4px 10px rgba(0,0,0,0.2);
-        }
+    .form-container {
+      background: white;
+      padding: 25px;
+      margin: 30px auto;
+      width: 40%;
+      border-radius: 12px;
+      box-shadow: 0px 4px 10px rgba(0,0,0,0.2);
+    }
 
-        input, button, select {
-            width: 90%;
-            padding: 12px;
-            margin: 10px 0;
-            border-radius: 8px;
-            border: 1px solid #ccc;
-            font-size: 16px;
-        }
+    input, select, button {
+      width: 90%;
+      padding: 12px;
+      margin: 10px 0;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+    }
 
-        button {
-            background: #007bff;
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
-            border: none;
-            transition: background 0.3s ease;
-        }
+    button {
+      background: #007bff;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      border: none;
+      transition: background 0.3s ease;
+    }
 
-        button:hover {
-            background: #0056b3;
-        }
+    button:hover { background: #0056b3; }
 
-        .flash {
-            padding: 15px;
-            margin: 15px auto;
-            width: 60%;
-            border-radius: 10px;
-            font-size: 18px;
-            font-weight: bold;
-            animation: fadeInOut 3s ease-in-out forwards;
-        }
-
-        .flash.success {
-            background: #28a745;
-            color: white;
-        }
-
-        .flash.error {
-            background: #dc3545;
-            color: white;
-        }
-
-        @keyframes fadeInOut {
-            0% { opacity: 0; transform: translateY(-20px); }
-            10% { opacity: 1; transform: translateY(0); }
-            90% { opacity: 1; }
-            100% { opacity: 0; transform: translateY(-20px); }
-        }
-    </style>
+    .flash {
+      padding: 15px;
+      margin: 15px auto;
+      width: 60%;
+      border-radius: 10px;
+      font-size: 18px;
+      font-weight: bold;
+    }
+    .flash.success { background: #28a745; color: white; }
+    .flash.error { background: #dc3545; color: white; }
+  </style>
 </head>
 <body>
-    
-    <header>
-        <img src="static/sources/itislogo.png" alt="Logo ITS">
-    </header>
+  <header>
+    <img src="static/sources/itislogo.png" alt="Logo ITS">
+  </header>
 
-    <h1>Registro de Alumnos</h1>
+  <h1>Registro de Alumnos</h1>
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        {% for category, msg in messages %}
-          <div class="flash {{ category }}">{{ msg }}</div>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, msg in messages %}
+        <div class="flash {{ category }}">{{ msg }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <div class="form-container">
+    <form method="POST">
+      <input type="text" name="nombre" placeholder="Nombre completo" maxlength="50"
+      oninput="this.value = this.value.replace(/[0-9]/g, '')">
+      <input type="text" name="numero_control" placeholder="Número de control" maxlength="9"
+      oninput="this.value = this.value.replace(/[^A-Za-z0-9]/g, '')">
+
+      <input type="text" name="correo" placeholder="Correo institucional" maxlength="100">
+
+      <select name="carrera">
+        <option value="">Selecciona tu carrera</option>
+        <option value="sistemas">Sistemas</option>
+        <option value="industrial">Industrial</option>
+        <option value="gestion">Gestión</option>
+        <option value="materiales">Materiales</option>
+        <option value="electronica">Electrónica</option>
+        <option value="mecatronica">Mecatrónica</option>
+        <option value="electrica">Eléctrica</option>
+        <option value="mecanica">Mecánica</option>
+      </select>
+
+      <select name="semestre">
+        <option value="">Selecciona tu semestre</option>
+        {% for i in range(1,14) %}
+          <option value="{{ i }}">{{ i }}</option>
         {% endfor %}
-      {% endif %}
-    {% endwith %}
+      </select>
 
-    <div class="form-container">
-        <form method="POST">
-          <!-- Nombre: solo letras y espacios -->
-          <input type="text" 
-          name="nombre" 
-          placeholder="Nombre completo"
-          required 
-          maxlength="50"
-          pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ ]+"
-          title="El nombre solo puede contener letras y espacios"><br>
-
-          <!-- Número de control: solo números, exactamente 9 -->
-          <input type="text" 
-            name="numero_control" 
-            placeholder="Número de control"
-            required 
-            maxlength="9" 
-            pattern="[0-9]{9}"
-            title="El número de control debe contener exactamente 9 dígitos"><br>
-
-          <!-- Correo electrónico válido -->
-          <input type="email" 
-            name="correo" 
-            placeholder="Correo electrónico"
-            required 
-            maxlength="100"><br>
-
-          <!-- Carrera -->
-          <select id="carrera" name="carrera" required>
-              <option value="">Selecciona tu carrera</option>
-              <option value="sistemas">Sistemas</option>
-              <option value="industrial">Industrial</option>
-              <option value="gestion">Gestión</option>
-              <option value="materiales">Materiales</option>
-              <option value="electronica">Electrónica</option>
-              <option value="mecatronica">Mecatrónica</option>
-              <option value="electrica">Eléctrica</option>
-              <option value="mecanica">Mecánica</option>
-          </select>
-
-          <!-- Semestre -->
-          <select id="semestre" name="semestre" required>
-              <option value="">Selecciona tu semestre</option>
-              <option value="1">1. Primero</option>
-              <option value="2">2. Segundo</option>
-              <option value="3">3. Tercero</option>
-              <option value="4">4. Cuarto</option>
-              <option value="5">5. Quinto</option>
-              <option value="6">6. Sexto</option>
-              <option value="7">7. Séptimo</option>
-              <option value="8">8. Octavo</option>
-              <option value="9">9. Noveno</option>
-              <option value="10">10. Décimo</option>
-              <option value="11">11. Undécimo</option>
-              <option value="12">12. Duodécimo</option>
-              <option value="13">13. Décimo Tercero</option>
-          </select>
-
-          <button type="submit">Registrar</button>
-        </form>
-    </div>
+      <button type="submit">Registrar</button>
+    </form>
+  </div>
 </body>
 </html>
