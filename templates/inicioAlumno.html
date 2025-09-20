@@ -61,7 +61,6 @@
             background: #0056b3;
         }
 
-        /* Estilos para mensajes */
         .flash {
             padding: 15px;
             margin: 15px auto;
@@ -98,7 +97,6 @@
 
     <h1>Registro de Alumnos</h1>
 
-    
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
         {% for category, msg in messages %}
@@ -109,6 +107,7 @@
 
     <div class="form-container">
         <form method="POST">
+          <!-- Nombre: solo letras y espacios -->
           <input type="text" 
           name="nombre" 
           placeholder="Nombre completo"
@@ -117,49 +116,54 @@
           pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ ]+"
           title="El nombre solo puede contener letras y espacios"><br>
 
+          <!-- Número de control: solo números, exactamente 9 -->
           <input type="text" 
             name="numero_control" 
             placeholder="Número de control"
             required 
             maxlength="9" 
             pattern="[0-9]{9}"
-            title="El número de control debe contener exactamente 9 dígitos numéricos"><br>
+            title="El número de control debe contener exactamente 9 dígitos"><br>
 
+          <!-- Correo electrónico válido -->
           <input type="email" 
             name="correo" 
             placeholder="Correo electrónico"
             required 
-            maxlength="100"
-            title="Debe ingresar un correo válido"><br>
+            maxlength="100"><br>
 
-            <select id="carrera" name="carrera" >
-                <option value="">Selecciona tu carrera</option>
-                <option value="sistemas">Sistemas</option>
-                <option value="industrial">Industrial</option>
-                <option value="gestion">Gestión</option>
-                <option value="materiales">Materiales</option>
-                <option value="electronica">Electrónica</option>
-                <option value="mecatronica">Mecatrónica</option>
-                <option value="electrica">Eléctrica</option>
-                <option value="mecanica">Mecánica</option>
-            </select>
-            <select id="semestre" name="semestre" >
-                <option value="">Selecciona tu semestre</option>
-                <option value="1">1. Primero</option>
-                <option value="2">2. Segundo</option>
-                <option value="3">3. Tercero</option>
-                <option value="4">4. Cuarto</option>
-                <option value="5">5. Quinto</option>
-                <option value="6">6. Sexto</option>
-                <option value="7">7. Séptimo</option>
-                <option value="8">8. Octavo</option>
-                <option value="9">9. Noveno</option>
-                <option value="10">10. Décimo</option>
-                <option value="11">11. Undécimo</option>
-                <option value="12">12. Duodécimo</option>
-                <option value="13">13. Décimo Tercero</option>
-            </select>
-            <button type="submit">Registrar</button>
+          <!-- Carrera -->
+          <select id="carrera" name="carrera" required>
+              <option value="">Selecciona tu carrera</option>
+              <option value="sistemas">Sistemas</option>
+              <option value="industrial">Industrial</option>
+              <option value="gestion">Gestión</option>
+              <option value="materiales">Materiales</option>
+              <option value="electronica">Electrónica</option>
+              <option value="mecatronica">Mecatrónica</option>
+              <option value="electrica">Eléctrica</option>
+              <option value="mecanica">Mecánica</option>
+          </select>
+
+          <!-- Semestre -->
+          <select id="semestre" name="semestre" required>
+              <option value="">Selecciona tu semestre</option>
+              <option value="1">1. Primero</option>
+              <option value="2">2. Segundo</option>
+              <option value="3">3. Tercero</option>
+              <option value="4">4. Cuarto</option>
+              <option value="5">5. Quinto</option>
+              <option value="6">6. Sexto</option>
+              <option value="7">7. Séptimo</option>
+              <option value="8">8. Octavo</option>
+              <option value="9">9. Noveno</option>
+              <option value="10">10. Décimo</option>
+              <option value="11">11. Undécimo</option>
+              <option value="12">12. Duodécimo</option>
+              <option value="13">13. Décimo Tercero</option>
+          </select>
+
+          <button type="submit">Registrar</button>
         </form>
     </div>
 </body>
