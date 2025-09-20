@@ -162,12 +162,11 @@ def registro_alumno():
         resultado = registrar_alumno(nombre, numero_control, correo, especialidad, int(semestre))
 
         if resultado == "duplicado":
-            flash("Ya estás registrado")
+            flash("Ya estás registrado", "error")
         elif resultado == "ok":
-            flash("Te haz registrado con éxito")
+            flash("Te haz registrado con éxito", "success")
         else:
-            flash("Error al registrar alumno. Intenta de nuevo.")
-
+            flash("Error al registrar alumno. Intenta de nuevo.", "error")
     return render_template("inicioAlumno.html")
 
 # Correr programa

@@ -1,74 +1,101 @@
-<html>
-  <head>
-    <link rel="stylesheet" type="text/css" href="static/css/stile.css" />
-    <title>Registro Alumno</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap"
-      rel="stylesheet"
-    />
-    <meta charset="utf-8" />
-  </head>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Registro de Alumnos</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f0f2f5;
+        }
 
-  <body>
-    <div class="container">
-      <div class="left">
-        <img src="static/sources/itislogo.png" alt="Logo ITS" class="Logo" />
-        <h1>Instituto Tecnológico de Saltillo</h1>
-        <h2>
-          Laboratorio de <br />
-          Electrónica / Analógica
-        </h2>
-      </div>
+        h1 {
+            margin-top: 30px;
+            color: #333;
+        }
 
-      <div class="right">
-        <div class="text">Registra tus datos para continuar</div>
-        <h2>Registro Alumnos</h2>
-        {% with messages = get_flashed_messages() %}
-          {% if messages %}
-            <ul class="messages">
-              {% for message in messages %}
-                <li>{{ message }}</li>
-              {% endfor %}
-            </ul>
-          {% endif %}
-        {% endwith %}
+        .form-container {
+            background: white;
+            padding: 25px;
+            margin: 30px auto;
+            width: 40%;
+            border-radius: 12px;
+            box-shadow: 0px 4px 10px rgba(0,0,0,0.1);
+        }
+
+        input, button {
+            width: 90%;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            font-size: 16px;
+        }
+
+        button {
+            background: #007bff;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+            transition: background 0.3s ease;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        /* Estilos para mensajes */
+        .flash {
+            padding: 15px;
+            margin: 15px auto;
+            width: 60%;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            animation: fadeInOut 3s ease-in-out forwards;
+        }
+
+        .flash.success {
+            background: #28a745; /* verde */
+            color: white;
+        }
+
+        .flash.error {
+            background: #dc3545; /* rojo */
+            color: white;
+        }
+
+        @keyframes fadeInOut {
+            0% { opacity: 0; transform: translateY(-20px); }
+            10% { opacity: 1; transform: translateY(0); }
+            90% { opacity: 1; }
+            100% { opacity: 0; transform: translateY(-20px); }
+        }
+    </style>
+</head>
+<body>
+    <h1>Registro de Alumnos</h1>
+
+    <!-- Mostrar mensajes flash -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, msg in messages %}
+          <div class="flash {{ category }}">{{ msg }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <div class="form-container">
         <form method="POST">
-          <input type="text" name="nombre" placeholder="Nombre..." required />
-          <input type="text" name="numero_control" placeholder="Número de control..." required />
-          <input type="email" name="correo" placeholder="Correo Institucional..." required />
-          <select id="carrera" name="carrera" required>
-            <option value="">-- Selecciona tu carrera --</option>
-            <option value="sistemas">Sistemas</option>
-            <option value="industrial">Industrial</option>
-            <option value="gestion">Gestión</option>
-            <option value="materiales">Materiales</option>
-            <option value="electronica">Electrónica</option>
-            <option value="mecatronica">Mecatrónica</option>
-            <option value="electrica">Eléctrica</option>
-            <option value="mecanica">Mecánica</option>
-          </select>
-
-          <select id="semestre" name="semestre" required>
-            <option value="">-- Selecciona tu semestre --</option>
-            <option value="1">1.Primero</option>
-            <option value="2">2.Segundo</option>
-            <option value="3">3.Tercero</option>
-            <option value="4">4.Cuarto</option>
-            <option value="5">5.Quinto</option>
-            <option value="6">6.Sexto</option>
-            <option value="7">7.Séptimo</option>
-            <option value="8">8.Octavo</option>
-            <option value="9">9.Noveno</option>
-            <option value="10">10.Decimo</option>
-            <option value="11">11.Undecimo</option>
-            <option value="12">12.Duodecimo</option>
-            <option value="13">13.Decimotercero</option>
-          </select>
-          <button type="submit">Registrarse</button>
+            <input type="text" name="nombre" placeholder="Nombre completo" required><br>
+            <input type="text" name="numero_control" placeholder="Número de control" required><br>
+            <input type="email" name="correo" placeholder="Correo electrónico" required><br>
+            <input type="text" name="carrera" placeholder="Especialidad" required><br>
+            <input type="number" name="semestre" placeholder="Semestre" required><br>
+            <button type="submit">Registrar</button>
         </form>
-      </div>
     </div>
-  </body>
+</body>
 </html>
