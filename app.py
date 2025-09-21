@@ -114,7 +114,7 @@ def login():
                     flash("El usuario y contraseña que ingresaste no existen")
             else:
                 if tipo == 0:
-                    return redirect(url_for("pagina_jefe"))
+                    return render_template("interfaceAdmin.html")
                 elif tipo == 1:
                     return redirect(url_for("pagina_auxiliar"))
 

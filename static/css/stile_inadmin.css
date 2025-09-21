@@ -1,0 +1,163 @@
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    text-transform: capitalize;
+    text-decoration: none;
+    list-style: none;
+
+    font-family: 'Open Sans', sans-serif;
+
+}
+
+body{
+    background-color: #f5f5f5f5;
+
+}
+header {
+    background-position: center bottom;
+    background-repeat: no-repeat;
+    background-size: cover;
+    min-height: 70vh;
+    display: flex;
+    align-items: center;
+    background-image: url(/static/sources/bck.png);
+
+
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.menu{
+    position: absolute;
+    top: 20px;
+    left: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 1000;
+
+}
+
+.menu .logo{
+    font-weight: 700;
+    font-size: 25px;
+    color: rgb(67, 67, 67);
+
+}
+
+.menu .navbar ul li{
+    position: relative;
+    float: left;
+
+}
+
+.menu .navbar ul li a{
+    font-size: 18px;
+    color: rgb(55, 55, 55);
+    padding: 20px;
+    display: block;
+}
+
+.menu .navbar ul li a:hover{
+    color: #2282d0;
+}
+
+#menu{
+    display: none;
+
+}
+
+.menu-icono{
+    width: 25px;
+}
+
+.menu label{
+    cursor: pointer;
+    display: none;
+
+}
+
+.header-content{
+    display: flex;
+}
+
+.content{
+    padding: 150px 150px 0px 0px;
+
+}
+
+.content h1{
+    color: rgb(85, 0, 0);
+    font-size: 55px;
+    text-transform: uppercase;
+    font-weight: 500;
+    line-height: 55px;
+
+}
+.content p{
+    color: rgb(60, 60, 60);
+    text-transform: uppercase;
+    margin-top: 65px;
+    font-size: 35px;
+    line-height: 40px;
+
+}
+.btn-1{
+    display: inline-block;
+    background-color: #7d1818;
+    border: 1px solid #9f9f9f;
+    margin: 35px 10px 0px 0px;
+    padding: 15px 25px;
+    color: white;
+    border-radius: 25px;
+}
+.btn-1:hover{
+    background-color: #9f9f9f;
+    color: black;
+    transition: .5s;
+
+}
+
+.banner{
+    padding-top: 50px;
+    width: 400px;
+
+}
+
+.info{
+    padding: 10px 0px;
+    display: flex;
+    justify-content: space-between;
+    text-align: center;
+}
+.box{
+    padding: 25px;
+    margin: 0px 10px;
+    box-shadow: 0px 0px 20px rgba(163, 163, 163, 0.3);
+    margin-top: 30px;
+}
+
+.box img{
+    margin-top: -50px;
+    width: 80px;
+}
+.box h3{
+    font-size: 20px;
+    font-weight: 600;
+    color: rgb(85, 0, 0);
+    margin-bottom: 10px;
+}
+.box p{
+    color: #525254;
+    font-size: 16px;
+    padding-top: 25px;
+    text-align: justify;
+}
+.box .gestion{
+    width: 50px;
+}
