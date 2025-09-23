@@ -13,8 +13,7 @@ db_user = 'JEFE_LAB'
 db_password = 'jefe123'
 dsn = 'localhost:1521/XEPDB1'
 
-#funciones de base de datos
-
+# funciones de base de datos
 def validar_usuario(usuario, contrasena):
     """Valida login y devuelve tipo si usuario y contraseña son correctos"""
     try:
@@ -58,7 +57,7 @@ def registrar_alumno(nombre, numero_control, correo, especialidad, semestre):
         connection = cx_Oracle.connect(user=db_user, password=db_password, dsn=dsn)
         cursor = connection.cursor()
 
-        # erificar si ya existe (por número de control o correo)
+        # verificar si ya existe (por número de control o correo)
         cursor.execute("""
             SELECT COUNT(*) FROM alumnos 
             WHERE numerocontrol = :nc OR correo = :cr
@@ -84,8 +83,7 @@ def registrar_alumno(nombre, numero_control, correo, especialidad, semestre):
         print("Error al insertar alumno:", e)
         return "error"
 
-#login jefe/auxiliar
-
+# login jefe/auxiliar
 @app.route("/", methods=["GET", "POST"])
 def login():
     """Login jefe/auxiliar"""
@@ -113,24 +111,23 @@ def login():
                 else:
                     flash("El usuario y contraseña que ingresaste no existen")
             else:
-                if tipo == 0:
-                    return render_template("interfaceAdmin.html")
-                elif tipo == 1:
-                    return redirect(url_for("pagina_auxiliar"))
+                if tipo == 0:  # jefe
+                    return redirect(url_for("interface_admin"))
+                elif tipo == 1:  # auxiliar
+                    return redirect(url_for("interface_aux"))
 
     return render_template("inicioAdmin.html")
 
-#direccionar ventana segun tipo
-@app.route("/jefe")
-def pagina_jefe():
-    return "<h1>Bienvenido Jefe de Laboratorio</h1>"
+# rutas de interfaces
+@app.route("/interface_admin")
+def interface_admin():
+    return render_template("interfaceAdmin.html")
 
-@app.route("/auxiliar")
-def pagina_auxiliar():
-    return "<h1>Bienvenido Auxiliar</h1>"
+@app.route("/interface_aux")
+def interface_aux():
+    return render_template("interfaceAux.html")
 
 # alumnos dirección
-
 @app.route("/registro_alumno", methods=["GET", "POST"])
 def registro_alumno():
     """Registro de alumnos"""
@@ -169,7 +166,6 @@ def registro_alumno():
             flash("Error al registrar alumno. Intenta de nuevo.", "error")
     return render_template("inicioAlumno.html")
 
-# Correr programa
-
+# correr programa
 if __name__ == "__main__":
     app.run(debug=True)
