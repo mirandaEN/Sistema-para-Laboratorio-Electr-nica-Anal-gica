@@ -13,77 +13,66 @@ db_user = 'JEFE_LAB'
 db_password = 'jefe123'
 dsn = 'localhost:1521/XEPDB1'
 
-# funciones de base de datos
+# función para obtener conexión
+def _conn():
+    return cx_Oracle.connect(user=db_user, password=db_password, dsn=dsn)
+
+#funciones de base de datos
 def validar_usuario(usuario, contrasena):
     """Valida login y devuelve tipo si usuario y contraseña son correctos"""
     try:
-        connection = cx_Oracle.connect(user=db_user, password=db_password, dsn=dsn)
-        cursor = connection.cursor()
-        cursor.execute("""
-            SELECT tipo 
-            FROM usuarios 
-            WHERE usuario = :usr AND contrasena = :pwd
-        """, usr=usuario, pwd=contrasena)
-        result = cursor.fetchone()
-        cursor.close()
-        connection.close()
-        if result:
-            return int(result[0])
-        else:
-            return None
+        with _conn() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute("""
+                    SELECT tipo 
+                    FROM usuarios 
+                    WHERE usuario = :usr AND contrasena = :pwd
+                """, usr=usuario, pwd=contrasena)
+                result = cursor.fetchone()
+                return int(result[0]) if result else None
     except cx_Oracle.DatabaseError as e:
-        print("Error al conectar a Oracle:", e)
+        print("Error Oracle en validar_usuario:", e)
         return None
 
 
 def usuario_existe(usuario):
     """Verifica si un usuario existe (sin validar contraseña)"""
     try:
-        connection = cx_Oracle.connect(user=db_user, password=db_password, dsn=dsn)
-        cursor = connection.cursor()
-        cursor.execute("SELECT 1 FROM usuarios WHERE usuario = :usr", usr=usuario)
-        result = cursor.fetchone()
-        cursor.close()
-        connection.close()
-        return result is not None
+        with _conn() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT 1 FROM usuarios WHERE usuario = :usr", usr=usuario)
+                return cursor.fetchone() is not None
     except cx_Oracle.DatabaseError as e:
-        print("Error al consultar usuario:", e)
+        print("Error Oracle en usuario_existe:", e)
         return False
 
 
 def registrar_alumno(nombre, numero_control, correo, especialidad, semestre):
     """Inserta un alumno en la tabla alumnos"""
     try:
-        connection = cx_Oracle.connect(user=db_user, password=db_password, dsn=dsn)
-        cursor = connection.cursor()
+        with _conn() as connection:
+            with connection.cursor() as cursor:
+                # verificar si ya existe (por número de control o correo)
+                cursor.execute("""
+                    SELECT COUNT(*) FROM alumnos 
+                    WHERE numerocontrol = :nc OR correo = :cr
+                """, nc=numero_control, cr=correo)
+                existe = cursor.fetchone()[0]
+                if existe > 0:
+                    return "duplicado"
 
-        # verificar si ya existe (por número de control o correo)
-        cursor.execute("""
-            SELECT COUNT(*) FROM alumnos 
-            WHERE numerocontrol = :nc OR correo = :cr
-        """, nc=numero_control, cr=correo)
-        existe = cursor.fetchone()[0]
-        if existe > 0:
-            cursor.close()
-            connection.close()
-            return "duplicado"
-
-        # insertar alumno
-        cursor.execute("""
-            INSERT INTO alumnos (nombre, numerocontrol, correo, especialidad, semestre)
-            VALUES (:nombre, :nc, :cr, :esp, :sem)
-        """, nombre=nombre, nc=numero_control, cr=correo, esp=especialidad, sem=semestre)
-
-        connection.commit()
-        cursor.close()
-        connection.close()
-        return "ok"
-
+                # insertar alumno
+                cursor.execute("""
+                    INSERT INTO alumnos (nombre, numerocontrol, correo, especialidad, semestre)
+                    VALUES (:nombre, :nc, :cr, :esp, :sem)
+                """, nombre=nombre, nc=numero_control, cr=correo, esp=especialidad, sem=semestre)
+                connection.commit()
+                return "ok"
     except cx_Oracle.DatabaseError as e:
-        print("Error al insertar alumno:", e)
+        print("Error Oracle en registrar_alumno:", e)
         return "error"
 
-# login jefe/auxiliar
+#rutas de la aplicación
 @app.route("/", methods=["GET", "POST"])
 def login():
     """Login jefe/auxiliar"""
@@ -96,7 +85,6 @@ def login():
             flash("El usuario solo puede contener letras")
             return render_template("inicioAdmin.html")
 
-        # Casos de prueba
         if not usuario and not contrasena:
             flash("Ingresa tu usuario y contraseña")
         elif usuario and not contrasena:
@@ -118,16 +106,17 @@ def login():
 
     return render_template("inicioAdmin.html")
 
-# rutas de interfaces
+
 @app.route("/interface_admin")
 def interface_admin():
     return render_template("interfaceAdmin.html")
+
 
 @app.route("/interface_aux")
 def interface_aux():
     return render_template("interfaceAux.html")
 
-# alumnos dirección
+
 @app.route("/registro_alumno", methods=["GET", "POST"])
 def registro_alumno():
     """Registro de alumnos"""
@@ -138,7 +127,6 @@ def registro_alumno():
         especialidad = request.form.get("carrera", "").strip()
         semestre = request.form.get("semestre", "").strip()
 
-        # validaciones
         if not nombre or not numero_control or not correo or not especialidad or not semestre:
             flash("Completa los campos faltantes")
             return render_template("inicioAlumno.html")
@@ -155,7 +143,6 @@ def registro_alumno():
             flash("Verifica el formato de los datos ingresados")
             return render_template("inicioAlumno.html")
 
-        # registrar
         resultado = registrar_alumno(nombre, numero_control, correo, especialidad, int(semestre))
 
         if resultado == "duplicado":
@@ -164,8 +151,10 @@ def registro_alumno():
             flash("Te haz registrado con éxito", "success")
         else:
             flash("Error al registrar alumno. Intenta de nuevo.", "error")
+
     return render_template("inicioAlumno.html")
 
-# correr programa
+
+# Ejecutar la aplicación
 if __name__ == "__main__":
     app.run(debug=True)
