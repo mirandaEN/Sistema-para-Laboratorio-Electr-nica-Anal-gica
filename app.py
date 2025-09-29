@@ -1,23 +1,30 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
 import cx_Oracle
 import re
+import traceback 
 
 app = Flask(__name__)
 app.secret_key = "supersecretkey"
 
 # inicializar Oracle Client
+# Asegúrate de que esta ruta sea correcta:
 cx_Oracle.init_oracle_client(lib_dir="/Users/mirandaestrada/instantclient_21_9")
 
 # datos de conexión a Oracle
 db_user = 'JEFE_LAB'
 db_password = 'jefe123'
 dsn = 'localhost:1521/XEPDB1'
+def get_db_connection():
+    return cx_Oracle.connect(user=db_user, password=db_password, dsn=dsn)
 
 # función para obtener conexión
 def _conn():
     return cx_Oracle.connect(user=db_user, password=db_password, dsn=dsn)
 
-#funciones de base de datos
+# ====================================================================
+# Funciones CRUD Generales (Login y Alumnos)
+# ====================================================================
+
 def validar_usuario(usuario, contrasena):
     """Valida login y devuelve tipo si usuario y contraseña son correctos"""
     try:
@@ -71,8 +78,112 @@ def registrar_alumno(nombre, numero_control, correo, especialidad, semestre):
     except cx_Oracle.DatabaseError as e:
         print("Error Oracle en registrar_alumno:", e)
         return "error"
+        
+# ====================================================================
+# Funciones CRUD para la tabla MATERIALES (Corregidas para ESTATUS Virtual)
+# ====================================================================
 
-#rutas de la aplicación
+def obtener_materiales():
+    """Obtiene todos los materiales de la tabla MATERIALES y los formatea."""
+    materiales = []
+    conn = None # Inicializar la conexión
+    try:
+        conn = _conn()
+        with conn.cursor() as cursor:
+            # 📢 La columna ESTATUS debe coincidir EXACTAMENTE con el nombre de tu columna virtual en Oracle.
+            cursor.execute("""
+                SELECT 
+                    ID_MATERIAL, NOMBRE, TIPO, MARCA_MODELO, CANTIDAD, ESTATUS,
+                    CANTIDAD AS CANTIDAD_DISPONIBLE 
+                FROM MATERIALES ORDER BY ID_MATERIAL
+            """)
+            
+            # Obtener nombres de columnas en MAYÚSCULAS para coincidir con Jinja/HTML
+            cols = [d[0].upper() for d in cursor.description]
+            
+            for row in cursor.fetchall():
+                materiales.append(dict(zip(cols, row)))
+                    
+    # 🎯 Captura y registro del error de Oracle
+    except Exception as e: 
+        print("--- CRITICAL INVENTORY ERROR ---")
+        # Imprimir el error detallado, incluyendo la traza si es posible
+        print(f"Error al obtener_materiales: {e}")
+        traceback.print_exc()
+        print("----------------------------------")
+        
+        # Mostrar el error detallado en el frontend
+        error_msg = str(e).splitlines()[0]
+        flash(f"Error al cargar el inventario. Revisa el nombre de la columna ESTATUS o tu conexión. Detalle: {error_msg}", 'danger')
+        return []
+    finally:
+        # Asegurarse de cerrar la conexión
+        if conn:
+            conn.close()
+    
+    return materiales
+
+
+def insertar_material(nombre, tipo, marca_modelo, cantidad):
+    """
+    Inserta un nuevo material. ESTATUS se excluye de la sentencia INSERT por ser virtual.
+    """
+    try:
+        with _conn() as connection:
+            with connection.cursor() as cursor:
+                # Generar el ID automáticamente (usando MAX + 1 como aproximación)
+                cursor.execute("SELECT NVL(MAX(ID_MATERIAL), 0) + 1 FROM MATERIALES")
+                nuevo_id = cursor.fetchone()[0]
+                
+                # ❌ ESTATUS FUE EXCLUIDO
+                cursor.execute("""
+                    INSERT INTO MATERIALES (ID_MATERIAL, NOMBRE, TIPO, MARCA_MODELO, CANTIDAD)
+                    VALUES (:id, :nombre, :tipo, :modelo, :cant)
+                """, id=nuevo_id, nombre=nombre, tipo=tipo, modelo=marca_modelo, cant=cantidad)
+                connection.commit()
+                return nuevo_id, "ok"
+    except cx_Oracle.DatabaseError as e:
+        error_msg = str(e).splitlines()[0] 
+        print("Error Oracle al insertar_material:", error_msg)
+        return None, f"error: {error_msg}"
+
+
+def actualizar_material(id_material, nombre, tipo, marca_modelo, cantidad):
+    """
+    Actualiza un material existente. ESTATUS se excluye de la sentencia UPDATE por ser virtual.
+    """
+    try:
+        with _conn() as connection:
+            with connection.cursor() as cursor:
+                # ❌ ESTATUS FUE EXCLUIDO del UPDATE
+                cursor.execute("""
+                    UPDATE MATERIALES 
+                    SET NOMBRE = :nombre, TIPO = :tipo, MARCA_MODELO = :modelo, CANTIDAD = :cant
+                    WHERE ID_MATERIAL = :id
+                """, nombre=nombre, tipo=tipo, modelo=marca_modelo, cant=cantidad, id=id_material)
+                connection.commit()
+                return cursor.rowcount > 0 
+    except cx_Oracle.DatabaseError as e:
+        print("Error Oracle al actualizar_material:", e)
+        return False
+
+
+def eliminar_material_db(id_material):
+    """Elimina un material de la tabla MATERIALES por su ID."""
+    try:
+        with _conn() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute("DELETE FROM MATERIALES WHERE ID_MATERIAL = :id", id=id_material)
+                connection.commit()
+                return cursor.rowcount > 0 
+    except cx_Oracle.DatabaseError as e:
+        print("Error Oracle al eliminar_material_db:", e)
+        return False
+        
+# ====================================================================
+# Rutas de la Aplicación
+# ====================================================================
+
 @app.route("/", methods=["GET", "POST"])
 def login():
     """Login jefe/auxiliar"""
@@ -153,6 +264,108 @@ def registro_alumno():
             flash("Error al registrar alumno. Intenta de nuevo.", "error")
 
     return render_template("inicioAlumno.html")
+
+
+# ====================================================================
+# Rutas de Inventario
+# ====================================================================
+
+@app.route('/inventario')
+def inventario():
+    """Ruta principal: Muestra la tabla de inventario."""
+    materiales = obtener_materiales()
+    return render_template('inventario.html', materiales=materiales)
+
+@app.route('/agregar_material', methods=['POST'])
+def agregar_material():
+    """Ruta para agregar un nuevo material."""
+    # Obtener datos del formulario
+    nombre = request.form.get('nombre', '').strip()
+    tipo = request.form.get('tipo', '').strip()
+    marca_modelo = request.form.get('marca_modelo', '').strip()
+    cantidad = request.form.get('cantidad')
+    
+    # 🎯 CORRECCIÓN: ESTATUS excluido de la validación.
+    if not nombre or not cantidad:
+        flash('Advertencia: Llenar los campos obligatorios: Nombre y Cantidad (*).', 'danger')
+        return redirect(url_for('inventario'))
+        
+    try:
+        cantidad_int = int(cantidad)
+        if cantidad_int <= 0:
+            flash('Advertencia: La cantidad debe ser un número entero positivo.', 'danger')
+            return redirect(url_for('inventario'))
+    except ValueError:
+        flash('Error: La cantidad debe ser un número entero válido.', 'danger')
+        return redirect(url_for('inventario'))
+
+    # Llama a la función SÓLO con los campos que se pueden escribir (excluyendo estatus)
+    nuevo_id, resultado = insertar_material(nombre, tipo, marca_modelo, cantidad_int)
+    
+    if resultado == "ok":
+        flash(f'Material "{nombre}" agregado exitosamente (ID: {nuevo_id}).', 'success')
+    else:
+        # Muestra el error específico de la base de datos
+        flash(f'Error al agregar material en la base de datos: {resultado}', 'danger')
+
+    return redirect(url_for('inventario'))
+
+@app.route('/modificar_material', methods=['POST'])
+def modificar_material():
+    """Ruta para modificar un material existente."""
+    id_material_str = request.form.get('id_material')
+    nombre = request.form.get('nombre', '').strip()
+    tipo = request.form.get('tipo', '').strip()
+    marca_modelo = request.form.get('marca_modelo', '').strip()
+    cantidad = request.form.get('cantidad')
+    # estatus ya no se usa para validación
+    
+    # 🎯 CORRECCIÓN: ESTATUS excluido de la validación.
+    if not id_material_str or not nombre or not cantidad:
+        flash('Advertencia: Llenar los campos obligatorios para modificar.', 'danger')
+        return redirect(url_for('inventario'))
+    
+    try:
+        id_material = int(id_material_str)
+        cantidad_int = int(cantidad)
+        if cantidad_int <= 0:
+            flash('Advertencia: La cantidad debe ser un número entero positivo.', 'danger')
+            return redirect(url_for('inventario'))
+    except ValueError:
+        flash('Error en el formato de ID o Cantidad.', 'danger')
+        return redirect(url_for('inventario'))
+
+    # Llama a la función SÓLO con los campos que se pueden escribir (excluyendo estatus)
+    if actualizar_material(id_material, nombre, tipo, marca_modelo, cantidad_int):
+        flash(f'Material "{nombre}" (ID: {id_material}) modificado exitosamente.', 'warning')
+    else:
+        flash(f'Error: No se encontró el material con ID {id_material} o no se pudo actualizar.', 'danger')
+
+    return redirect(url_for('inventario'))
+
+
+@app.route('/eliminar_material', methods=['POST'])
+def eliminar_material():
+    """Ruta para eliminar un material."""
+    id_material_str = request.form.get('id_material')
+    
+    if not id_material_str:
+        flash('Error: ID de material no proporcionado para eliminar.', 'danger')
+        return redirect(url_for('inventario'))
+        
+    try:
+        id_material = int(id_material_str)
+    except ValueError:
+        flash('Error: ID de material inválido.', 'danger')
+        return redirect(url_for('inventario'))
+
+    # Lógica para eliminar en Oracle
+    if eliminar_material_db(id_material):
+        flash(f'Material (ID: {id_material}) eliminado correctamente.', 'success')
+    else:
+        flash(f'Error: No se pudo encontrar el material con ID {id_material} para eliminar.', 'danger')
+
+    return redirect(url_for('inventario'))
 
 
 # Ejecutar la aplicación
