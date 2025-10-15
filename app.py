@@ -1,18 +1,21 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
 import cx_Oracle
-import re
-import traceback 
+import traceback
 import json
 
 app = Flask(__name__)
-app.secret_key = "supersecretkey" 
+app.secret_key = "supersecretkey"
 
-# Configuración del cliente de Oracle (asegúrate de que la ruta es correcta)
+# --- CONSTANTES DE SEGURIDAD PARA BLOQUEO DE CUENTA ---
+LOCK_MAX_ATTEMPTS = 6  # Intentos fallidos antes de bloquear la cuenta.
+LOCK_TIME_MIN = 15      # Minutos que la cuenta permanecerá bloqueada.
+
+# --- CONFIGURACIÓN DE CONEXIÓN A ORACLE ---
+
 cx_Oracle.init_oracle_client(lib_dir="/Users/mirandaestrada/instantclient_21_9")
 
-# --- CONEXIÓN A LA BASE DE DATOS ---
 db_user = 'JEFE_LAB'
-db_password = 'jefe123' 
+db_password = 'jefe123'
 dsn = 'localhost:1521/XEPDB1'
 
 def get_db_connection():
@@ -29,209 +32,139 @@ def rows_to_dicts(cursor, rows):
     column_names = [d[0].upper() for d in cursor.description]
     return [dict(zip(column_names, row)) for row in rows]
 
-# --- FUNCIONES DE AUTENTICACIÓN Y REGISTRO ---
-
-def validar_usuario(usuario, contrasena):
-    """Valida login y devuelve (id, tipo) si el usuario y contraseña son correctos."""
-    conn = get_db_connection()
-    if not conn: return None
-    
-    try:
-        cursor = conn.cursor()
-        cursor.execute("""
-            SELECT ID_USUARIO, TIPO 
-            FROM USUARIOS 
-            WHERE USUARIO = :usr AND CONTRASENA = :pwd
-        """, usr=usuario, pwd=contrasena)
-        result = cursor.fetchone() 
-        return (result[0], result[1]) if result else None
-    except Exception as e:
-        print(f"Error Oracle en validar_usuario: {e}")
-        return None
-    finally:
-        if conn:
-            cursor.close()
-            conn.close()
-
-def usuario_existe(usuario):
-    """Verifica si un usuario existe."""
-    conn = get_db_connection()
-    if not conn: return False
-    try:
-        cursor = conn.cursor()
-        cursor.execute("SELECT 1 FROM USUARIOS WHERE USUARIO = :usr", usr=usuario)
-        return cursor.fetchone() is not None
-    except Exception as e:
-        print(f"Error Oracle en usuario_existe: {e}")
-        return False
-    finally:
-        if conn:
-            cursor.close()
-            conn.close()
-
-def registrar_alumno(nombre, numero_control, correo, especialidad, semestre):
-    """Inserta un alumno en la tabla alumnos."""
-    conn = get_db_connection()
-    if not conn: return "error"
-    try:
-        cursor = conn.cursor()
-        cursor.execute("""
-            SELECT COUNT(*) FROM ALUMNOS 
-            WHERE NUMEROCONTROL = :nc OR CORREO = :cr
-        """, nc=numero_control, cr=correo)
-        existe = cursor.fetchone()[0]
-        
-        if existe > 0:
-            return "duplicado"
-
-        cursor.execute("""
-            INSERT INTO ALUMNOS (nombre, numerocontrol, correo, especialidad, semestre)
-            VALUES (:nombre, :nc, :cr, :esp, :sem)
-        """, nombre=nombre, nc=numero_control, cr=correo, esp=especialidad, sem=semestre)
-        conn.commit()
-        return "ok"
-    except Exception as e:
-        print(f"Error Oracle en registrar_alumno: {e}")
-        conn.rollback()
-        return "error"
-    finally:
-        if conn:
-            cursor.close()
-            conn.close()
-
-# --- FUNCIONES DE GESTIÓN DE INVENTARIO ---
-
-def obtener_materiales():
-    """Obtiene todos los materiales de la tabla MATERIALES."""
+# --- FUNCIÓN DE AUTENTICACIÓN CON LÓGICA DE BLOQUEO ---
+def autenticar_con_bloqueo(usuario, contrasena):
+    """
+    Valida las credenciales del usuario implementando un sistema de bloqueo por intentos fallidos.
+    Devuelve una tupla: (exito: bool, datos_usuario: dict|None, mensaje: str).
+    """
     conn = get_db_connection()
     if not conn:
-        flash("Error de conexión a la base de datos.", 'danger')
-        return []
+        return (False, None, "Error de conexión con la base de datos.")
+
     try:
         cursor = conn.cursor()
+
+        # 1. Obtener los datos del usuario, incluyendo todas las columnas relevantes
         cursor.execute("""
-            SELECT ID_MATERIAL, NOMBRE, TIPO, MARCA_MODELO, CANTIDAD, CANTIDAD_DISPONIBLE, ESTATUS
-            FROM MATERIALES ORDER BY ID_MATERIAL
-        """)
-        rows = cursor.fetchall()
-        materiales = rows_to_dicts(cursor, rows)
-        return materiales
-    except Exception as e: 
-        print(f"Error al obtener_materiales: {e}")
-        flash(f"Error al cargar el inventario: {str(e).splitlines()[0]}", 'danger')
-        return []
+            SELECT ID, USUARIO, PASSWORD, TIPO, CREADO_EN, INTENTOS_FALLIDOS, BLOQUEADO_HASTA
+            FROM USUARIOS
+            WHERE USUARIO = :usr
+        """, usr=usuario)
+        row = cursor.fetchone()
+
+        if not row:
+            return (False, None, "El usuario que ingresaste no existe.")
+
+        # Desempaquetamos la fila completa para mayor claridad
+        id_db, user_db, pwd_db, tipo_db, creado_en_db, intentos_db, bloqueado_hasta_db = row
+
+        # 2. Verificar si la cuenta está actualmente bloqueada
+        if bloqueado_hasta_db is not None and bloqueado_hasta_db > cx_Oracle.Timestamp.now():
+            cursor.execute("""
+                SELECT CEIL((CAST(BLOQUEADO_HASTA AS DATE) - CAST(SYSTIMESTAMP AS DATE)) * 24 * 60)
+                FROM USUARIOS
+                WHERE USUARIO = :usr
+            """, usr=usuario)
+            mins_left = cursor.fetchone()[0]
+            mins_left = int(mins_left) if mins_left and mins_left > 0 else 1
+            return (False, None, f"Cuenta bloqueada. Intenta de nuevo en {mins_left} minuto(s).")
+
+        # 3. Validar la contraseña
+        if contrasena == pwd_db:
+            # Contraseña correcta: resetear intentos y bloqueo
+            cursor.execute("""
+                UPDATE USUARIOS
+                SET INTENTOS_FALLIDOS = 0,
+                    BLOQUEADO_HASTA = NULL
+                WHERE USUARIO = :usr
+            """, usr=usuario)
+            conn.commit()
+            user_data = {
+                'id': id_db,
+                'nombre': user_db,
+                'tipo': tipo_db
+            }
+            return (True, user_data, "Acceso concedido.")
+        else:
+            # Contraseña incorrecta: incrementar intentos y bloquear si es necesario
+            nuevos_intentos = intentos_db + 1
+
+            if nuevos_intentos >= LOCK_MAX_ATTEMPTS:
+                # Bloquear la cuenta
+                cursor.execute("""
+                    UPDATE USUARIOS
+                    SET INTENTOS_FALLIDOS = :intentos,
+                        BLOQUEADO_HASTA = SYSTIMESTAMP + NUMTODSINTERVAL(:mins, 'MINUTE')
+                    WHERE USUARIO = :usr
+                """, intentos=nuevos_intentos, mins=LOCK_TIME_MIN, usr=usuario)
+                conn.commit()
+                return (False, None, f"Credenciales incorrectas. La cuenta ha sido bloqueada por {LOCK_TIME_MIN} minutos.")
+            else:
+                # Solo registrar el intento fallido
+                cursor.execute("""
+                    UPDATE USUARIOS
+                    SET INTENTOS_FALLIDOS = :intentos
+                    WHERE USUARIO = :usr
+                """, intentos=nuevos_intentos, usr=usuario)
+                conn.commit()
+                intentos_restantes = LOCK_MAX_ATTEMPTS - nuevos_intentos
+                return (False, None, f"Verifica tu usuario y contraseña. Te quedan {intentos_restantes} intento(s).")
+
+    except Exception as e:
+        print(f"Error Oracle en autenticar_con_bloqueo: {e}")
+        traceback.print_exc()
+        return (False, None, "Ocurrió un error inesperado durante la autenticación.")
     finally:
         if conn:
             cursor.close()
             conn.close()
 
-def insertar_material(nombre, tipo, marca_modelo, cantidad):
-    """Inserta un nuevo material, inicializando la cantidad disponible."""
-    conn = get_db_connection()
-    if not conn: return None, "error: sin conexión"
-    try:
-        cursor = conn.cursor()
-        cursor.execute("SELECT NVL(MAX(ID_MATERIAL), 0) + 1 FROM MATERIALES")
-        nuevo_id = cursor.fetchone()[0]
-        
-        cursor.execute("""
-            INSERT INTO MATERIALES (ID_MATERIAL, NOMBRE, TIPO, MARCA_MODELO, CANTIDAD, CANTIDAD_DISPONIBLE)
-            VALUES (:id, :nombre, :tipo, :modelo, :cant, :cant_disp)
-        """, id=nuevo_id, nombre=nombre, tipo=tipo, modelo=marca_modelo, cant=cantidad, cant_disp=cantidad)
-        conn.commit()
-        return nuevo_id, "ok"
-    except Exception as e:
-        conn.rollback()
-        error_msg = str(e).splitlines()[0] 
-        print(f"Error Oracle al insertar_material: {error_msg}")
-        return None, f"error: {error_msg}"
-    finally:
-        if conn:
-            cursor.close()
-            conn.close()
-
-def actualizar_material(id_material, nombre, tipo, marca_modelo, cantidad):
-    """Actualiza un material y recalcula la cantidad disponible."""
-    conn = get_db_connection()
-    if not conn: return False
-    try:
-        cursor = conn.cursor()
-        cursor.execute("SELECT CANTIDAD, CANTIDAD_DISPONIBLE FROM MATERIALES WHERE ID_MATERIAL = :id", id=id_material)
-        material_actual = cursor.fetchone()
-        if not material_actual:
-            return False
-        
-        diferencia = cantidad - material_actual[0]
-        nueva_cantidad_disponible = material_actual[1] + diferencia
-        
-        cursor.execute("""
-            UPDATE MATERIALES 
-            SET NOMBRE = :nombre, TIPO = :tipo, MARCA_MODELO = :modelo, CANTIDAD = :cant, CANTIDAD_DISPONIBLE = :cant_disp
-            WHERE ID_MATERIAL = :id
-        """, nombre=nombre, tipo=tipo, modelo=marca_modelo, cant=cantidad, cant_disp=nueva_cantidad_disponible, id=id_material)
-        conn.commit()
-        return cursor.rowcount > 0 
-    except Exception as e:
-        conn.rollback()
-        print(f"Error Oracle al actualizar_material: {e}")
-        return False
-    finally:
-        if conn:
-            cursor.close()
-            conn.close()
-
-def eliminar_material_db(id_material):
-    """Elimina un material de la tabla MATERIALES por su ID."""
-    conn = get_db_connection()
-    if not conn: return False
-    try:
-        cursor = conn.cursor()
-        cursor.execute("DELETE FROM MATERIALES WHERE ID_MATERIAL = :id", id=id_material)
-        conn.commit()
-        return cursor.rowcount > 0 
-    except Exception as e:
-        conn.rollback()
-        print(f"Error Oracle al eliminar_material_db: {e}")
-        return False
-    finally:
-        if conn:
-            cursor.close()
-            conn.close()
-        
 # --- RUTAS DE LA APLICACIÓN ---
 
 @app.route("/", methods=["GET", "POST"])
 def login():
-    """Login jefe/auxiliar"""
+    """Página de inicio de sesión para jefe/auxiliar con sistema de bloqueo."""
     if request.method == "POST":
         usuario = request.form.get("usuario", "").strip()
         contrasena = request.form.get("contrasena", "").strip()
-        
-        user_data = validar_usuario(usuario, contrasena)
-        if user_data is None:
-            if usuario_existe(usuario):
-                flash("Verifica tu usuario y contraseña", "danger")
-            else:
-                flash("El usuario que ingresaste no existe", "danger")
-        else:
-            user_id, user_tipo = user_data
-            session['user_id'] = user_id
-            session['user_rol'] = 'admin' if user_tipo == 0 else 'auxiliar'
-            session['user_nombre'] = usuario
-            
-            if user_tipo == 0:
+
+        if not usuario or not contrasena:
+            flash("Ambos campos son obligatorios.", "danger")
+            return redirect(url_for('login'))
+
+        es_valido, datos_usuario, mensaje = autenticar_con_bloqueo(usuario, contrasena)
+
+        if es_valido:
+            session['user_id'] = datos_usuario['id']
+            session['user_rol'] = 'admin' if datos_usuario['tipo'] == 0 else 'auxiliar'
+            session['user_nombre'] = datos_usuario['nombre']
+
+            if datos_usuario['tipo'] == 0:
                 return redirect(url_for("interface_admin"))
-            elif user_tipo == 1:
+            else:
                 return redirect(url_for("interface_aux"))
+        else:
+            flash(mensaje, "danger")
+            return redirect(url_for('login'))
 
     return render_template("inicioAdmin.html")
 
+
+# --- RUTAS DE INTERFACES Y REGISTRO ---
+
 @app.route("/interface_admin")
 def interface_admin():
+    if 'user_id' not in session or session.get('user_rol') != 'admin':
+        flash('Acceso no autorizado.', 'danger')
+        return redirect(url_for('login'))
     return render_template("interfaceAdmin.html")
 
 @app.route("/interface_aux")
 def interface_aux():
+    if 'user_id' not in session or session.get('user_rol') != 'auxiliar':
+        flash('Acceso no autorizado.', 'danger')
+        return redirect(url_for('login'))
     return render_template("interfaceAux.html")
 
 @app.route("/registro_alumno", methods=["GET", "POST"])
@@ -246,8 +179,8 @@ def registro_alumno():
         if not all([nombre, numero_control, correo, especialidad, semestre]):
             flash("Completa todos los campos.", "warning")
             return render_template("inicioAlumno.html")
-        
-        resultado = registrar_alumno(nombre, numero_control, correo, especialidad, int(semestre))
+
+        resultado = registrar_alumno_db(nombre, numero_control, correo, especialidad, int(semestre))
 
         if resultado == "duplicado":
             flash("El número de control o correo ya están registrados.", "error")
@@ -258,14 +191,44 @@ def registro_alumno():
 
     return render_template("inicioAlumno.html")
 
-# --- RUTAS DE INVENTARIO ---
+def registrar_alumno_db(nombre, numero_control, correo, especialidad, semestre):
+    """Inserta un alumno en la tabla alumnos."""
+    conn = get_db_connection()
+    if not conn: return "error"
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT COUNT(*) FROM ALUMNOS
+            WHERE NUMEROCONTROL = :nc OR CORREO = :cr
+        """, nc=numero_control, cr=correo)
+        existe = cursor.fetchone()[0]
+
+        if existe > 0:
+            return "duplicado"
+
+        cursor.execute("""
+            INSERT INTO ALUMNOS (nombre, numerocontrol, correo, especialidad, semestre)
+            VALUES (:nombre, :nc, :cr, :esp, :sem)
+        """, nombre=nombre, nc=numero_control, cr=correo, esp=especialidad, sem=semestre)
+        conn.commit()
+        return "ok"
+    except Exception as e:
+        print(f"Error Oracle en registrar_alumno_db: {e}")
+        conn.rollback()
+        return "error"
+    finally:
+        if conn:
+            cursor.close()
+            conn.close()
+
+# --- RUTAS Y FUNCIONES DE GESTIÓN DE INVENTARIO ---
 
 @app.route('/inventario')
 def inventario():
     if 'user_id' not in session:
         return redirect(url_for('login'))
     materiales = obtener_materiales()
-    return render_template('inventario.html', 
+    return render_template('inventario.html',
                            materiales=materiales,
                            usuario_rol=session.get('user_rol'))
 
@@ -276,7 +239,7 @@ def agregar_material():
     tipo = request.form.get('tipo', '').strip()
     marca_modelo = request.form.get('marca_modelo', '').strip()
     cantidad = request.form.get('cantidad')
-    
+
     if not nombre or not cantidad:
         flash('Nombre y Cantidad son obligatorios.', 'danger')
         return redirect(url_for('inventario'))
@@ -286,6 +249,7 @@ def agregar_material():
     except ValueError:
         flash('La cantidad debe ser un número entero positivo.', 'danger')
         return redirect(url_for('inventario'))
+
     nuevo_id, resultado = insertar_material(nombre, tipo, marca_modelo, cantidad_int)
     if resultado == "ok":
         flash(f'Material "{nombre}" agregado (ID: {nuevo_id}).', 'success')
@@ -301,6 +265,7 @@ def modificar_material():
     tipo = request.form.get('tipo', '').strip()
     marca_modelo = request.form.get('marca_modelo', '').strip()
     cantidad = request.form.get('cantidad')
+
     if not all([id_material_str, nombre, cantidad]):
         flash('Faltan campos obligatorios para modificar.', 'danger')
         return redirect(url_for('inventario'))
@@ -311,6 +276,7 @@ def modificar_material():
     except ValueError:
         flash('ID o Cantidad tienen formato incorrecto.', 'danger')
         return redirect(url_for('inventario'))
+
     if actualizar_material(id_material, nombre, tipo, marca_modelo, cantidad_int):
         flash(f'Material ID {id_material} modificado.', 'warning')
     else:
@@ -329,15 +295,106 @@ def eliminar_material():
     except ValueError:
         flash('ID de material inválido.', 'danger')
         return redirect(url_for('inventario'))
+
     if eliminar_material_db(id_material):
         flash(f'Material ID {id_material} eliminado.', 'success')
     else:
         flash(f'Error al eliminar el material ID {id_material}.', 'danger')
     return redirect(url_for('inventario'))
 
-# ==================================================================
-# =============== SECCIÓN DE PRÉSTAMOS (CORREGIDA) =================
-# ==================================================================
+
+def obtener_materiales():
+    conn = get_db_connection()
+    if not conn:
+        flash("Error de conexión a la base de datos.", 'danger')
+        return []
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT ID_MATERIAL, NOMBRE, TIPO, MARCA_MODELO, CANTIDAD, CANTIDAD_DISPONIBLE, ESTATUS
+            FROM MATERIALES ORDER BY ID_MATERIAL
+        """)
+        return rows_to_dicts(cursor, cursor.fetchall())
+    except Exception as e:
+        print(f"Error al obtener_materiales: {e}")
+        flash(f"Error al cargar el inventario: {str(e).splitlines()[0]}", 'danger')
+        return []
+    finally:
+        if conn:
+            cursor.close()
+            conn.close()
+
+def insertar_material(nombre, tipo, marca_modelo, cantidad):
+    conn = get_db_connection()
+    if not conn: return None, "error: sin conexión"
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT NVL(MAX(ID_MATERIAL), 0) + 1 FROM MATERIALES")
+        nuevo_id = cursor.fetchone()[0]
+
+        cursor.execute("""
+            INSERT INTO MATERIALES (ID_MATERIAL, NOMBRE, TIPO, MARCA_MODELO, CANTIDAD, CANTIDAD_DISPONIBLE)
+            VALUES (:id, :nombre, :tipo, :modelo, :cant, :cant_disp)
+        """, id=nuevo_id, nombre=nombre, tipo=tipo, modelo=marca_modelo, cant=cantidad, cant_disp=cantidad)
+        conn.commit()
+        return nuevo_id, "ok"
+    except Exception as e:
+        conn.rollback()
+        error_msg = str(e).splitlines()[0]
+        print(f"Error Oracle al insertar_material: {error_msg}")
+        return None, f"error: {error_msg}"
+    finally:
+        if conn:
+            cursor.close()
+            conn.close()
+
+def actualizar_material(id_material, nombre, tipo, marca_modelo, cantidad):
+    conn = get_db_connection()
+    if not conn: return False
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT CANTIDAD, CANTIDAD_DISPONIBLE FROM MATERIALES WHERE ID_MATERIAL = :id", id=id_material)
+        material_actual = cursor.fetchone()
+        if not material_actual:
+            return False
+
+        diferencia = cantidad - material_actual[0]
+        nueva_cantidad_disponible = material_actual[1] + diferencia
+
+        cursor.execute("""
+            UPDATE MATERIALES
+            SET NOMBRE = :nombre, TIPO = :tipo, MARCA_MODELO = :modelo, CANTIDAD = :cant, CANTIDAD_DISPONIBLE = :cant_disp
+            WHERE ID_MATERIAL = :id
+        """, nombre=nombre, tipo=tipo, modelo=marca_modelo, cant=cantidad, cant_disp=nueva_cantidad_disponible, id=id_material)
+        conn.commit()
+        return cursor.rowcount > 0
+    except Exception as e:
+        conn.rollback()
+        print(f"Error Oracle al actualizar_material: {e}")
+        return False
+    finally:
+        if conn:
+            cursor.close()
+            conn.close()
+
+def eliminar_material_db(id_material):
+    conn = get_db_connection()
+    if not conn: return False
+    try:
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM MATERIALES WHERE ID_MATERIAL = :id", id=id_material)
+        conn.commit()
+        return cursor.rowcount > 0
+    except Exception as e:
+        conn.rollback()
+        print(f"Error Oracle al eliminar_material_db: {e}")
+        return False
+    finally:
+        if conn:
+            cursor.close()
+            conn.close()
+
+# --- RUTAS Y FUNCIONES DE GESTIÓN DE PRÉSTAMOS ---
 
 @app.route('/prestamos')
 def prestamos():
@@ -349,13 +406,13 @@ def prestamos():
     if not conn:
         flash("Error de conexión a la base de datos.", 'danger')
         return render_template('prestamos.html', materiales_disponibles=[], materias=[], maestros=[], prestamos_activos=[])
-    
+
     try:
         cursor = conn.cursor()
-        
+
         cursor.execute("SELECT ID_MATERIAL, NOMBRE, CANTIDAD_DISPONIBLE FROM MATERIALES WHERE CANTIDAD_DISPONIBLE > 0 ORDER BY NOMBRE")
         materiales_disponibles = rows_to_dicts(cursor, cursor.fetchall())
-        
+
         cursor.execute("SELECT ID_MATERIA, NOMBRE_MATERIA FROM MATERIAS ORDER BY NOMBRE_MATERIA")
         materias = rows_to_dicts(cursor, cursor.fetchall())
 
@@ -366,13 +423,13 @@ def prestamos():
             SELECT p.ID_PRESTAMO, a.NOMBRE, a.NUMEROCONTROL, p.FECHA_HORA
             FROM PRESTAMOS p
             JOIN ALUMNOS a ON p.ID_ALUMNO = a.ID_ALUMNO
-            WHERE p.ESTATUS = 'Activo' 
-              AND p.FECHA_HORA >= TRUNC(CURRENT_TIMESTAMP) 
+            WHERE p.ESTATUS = 'Activo'
+              AND p.FECHA_HORA >= TRUNC(CURRENT_TIMESTAMP)
               AND p.FECHA_HORA < TRUNC(CURRENT_TIMESTAMP) + 1
             ORDER BY p.FECHA_HORA DESC
         """)
         prestamos_activos_base = rows_to_dicts(cursor, cursor.fetchall())
-        
+
         prestamos_con_materiales = []
         for prestamo in prestamos_activos_base:
             cursor.execute("""
@@ -386,7 +443,7 @@ def prestamos():
             prestamo['MATERIALES_LISTA'] = lista_materiales_str
             prestamos_con_materiales.append(prestamo)
 
-        return render_template('prestamos.html', 
+        return render_template('prestamos.html',
                                usuario_rol=session.get('user_rol'),
                                current_user={'nombre': session.get('user_nombre')},
                                materiales_disponibles=materiales_disponibles,
@@ -406,7 +463,7 @@ def prestamos():
 def get_alumno(numerocontrol):
     if 'user_id' not in session:
         return jsonify({'error': 'No autorizado'}), 401
-    
+
     conn = get_db_connection()
     if not conn:
         return jsonify({'error': 'Error de base de datos'}), 500
@@ -435,7 +492,7 @@ def registrar_prestamo():
         return redirect(url_for('prestamos'))
     try:
         cursor = conn.cursor()
-        
+
         no_control = request.form['no_control']
         id_materia = request.form['materia']
         id_maestro = request.form['maestro']
@@ -455,9 +512,7 @@ def registrar_prestamo():
         id_alumno = resultado_alumno[0]
 
         id_prestamo_var = cursor.var(cx_Oracle.NUMBER)
-        
-        # ✅ --- CORRECCIÓN FINAL: Usamos CURRENT_TIMESTAMP --- ✅
-        # Esto asegura que la fecha y hora del préstamo sean las de la zona horaria local.
+
         cursor.execute("""
             INSERT INTO PRESTAMOS (ID_ALUMNO, ID_MATERIA, ID_MAESTRO, ID_AUXILIAR, NUMERO_MESA, ESTATUS, FECHA_HORA)
             VALUES (:id_a, :id_m, :id_ma, :id_aux, :mesa, 'Activo', CURRENT_TIMESTAMP)
@@ -474,7 +529,7 @@ def registrar_prestamo():
                 UPDATE MATERIALES SET CANTIDAD_DISPONIBLE = CANTIDAD_DISPONIBLE - :cant
                 WHERE ID_MATERIAL = :id_mat
             """, cant=int(cantidad), id_mat=int(id_material))
-        
+
         conn.commit()
         flash('Préstamo registrado exitosamente.', 'success')
     except Exception as e:
@@ -494,7 +549,7 @@ def devolver_prestamo():
     if not id_prestamo:
         flash("ID de préstamo no encontrado.", "danger")
         return redirect(url_for('prestamos'))
-        
+
     conn = get_db_connection()
     if not conn:
         flash("Error de conexión.", 'danger')
@@ -503,7 +558,7 @@ def devolver_prestamo():
         cursor = conn.cursor()
         cursor.execute("SELECT ID_MATERIAL, CANTIDAD_PRESTADA FROM DETALLE_PRESTAMO WHERE ID_PRESTAMO = :id_p", id_p=id_prestamo)
         materiales_a_devolver = rows_to_dicts(cursor, cursor.fetchall())
-        
+
         for material in materiales_a_devolver:
             cursor.execute("""
                 UPDATE MATERIALES SET CANTIDAD_DISPONIBLE = CANTIDAD_DISPONIBLE + :cant
@@ -522,14 +577,10 @@ def devolver_prestamo():
             conn.close()
     return redirect(url_for('prestamos'))
 
+# --- RUTA ADICIONAL ---
 @app.route('/simulador_multimetro')
 def simulador_multimetro():
     return render_template('simulador_multimetro.html')
 
 if __name__ == "__main__":
     app.run(debug=True)
-
-
-
-
-

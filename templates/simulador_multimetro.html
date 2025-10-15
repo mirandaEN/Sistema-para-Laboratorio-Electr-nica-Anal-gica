@@ -4,47 +4,31 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Simulador de Multímetro</title>
-    <!-- Carga de Tailwind CSS para un diseño limpio y responsivo -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Carga de GSAP (GreenSock) para animaciones y arrastre de elementos -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/Draggable.min.js"></script>
     
     <style>
-        /* Estilos generales y fuente */
         body { font-family: 'Inter', sans-serif; background-color: #f7f9fb; }
-        
-        /* Contenedor del juego */
         #game-container {
             max-width: 1200px;
             height: 80vh;
             min-height: 600px;
             border-radius: 1rem;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            position: relative; /* Necesario para posicionar el SVG de las sondas */
         }
-
-        /* Estilos del Multímetro */
         .multimeter-dial {
             transform-origin: 50% 50%;
-            transition: transform 0.2s ease-out;
             cursor: pointer;
         }
+        .probe { cursor: grab; }
+        .probe:active { cursor: grabbing; }
 
-        /* Estilos para las sondas arrastrables */
-        .probe {
-            cursor: grab;
+        /* Ya no necesita la propiedad 'r', se define en el HTML */
+        .probe-tip { 
             stroke-width: 2;
-            transition: stroke 0.1s;
         }
-        .probe-tip {
-            r: 5;
-            transition: r 0.1s;
-        }
-        .probe:active {
-            cursor: grabbing;
-        }
-
-        /* Estilos para los puntos de prueba (Targets) */
         .target {
             stroke: #374151;
             fill: #ffffff;
@@ -60,387 +44,243 @@
             fill: #10b981;
             stroke: #059669;
         }
-
-        /* Pantalla del multímetro */
-        #lcd-display {
-            fill: #9CA3AF; /* Color de fondo del LCD */
-            font-family: monospace;
-            text-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
-        }
-        #lcd-text {
-            fill: #111827; /* Color del texto LCD */
-            font-size: 32px;
-            font-weight: bold;
-        }
-
-        /* Mensajes Flash */
+        #lcd-display { fill: #9CA3AF; font-family: monospace; }
+        #lcd-text { fill: #111827; font-size: 32px; font-weight: bold; }
         .flash-message {
             opacity: 0;
             transition: opacity 0.5s, transform 0.5s;
             transform: translateY(10px);
         }
-        .flash-visible {
-            opacity: 1;
-            transform: translateY(0);
-        }
+        .flash-visible { opacity: 1; transform: translateY(0); }
     </style>
 </head>
 <body class="p-4">
 
-    <!-- Mensajes Flash de Retroalimentación -->
     <div id="feedback-message" class="flash-message fixed top-4 right-4 p-4 rounded-lg shadow-xl text-white z-50"></div>
 
-    <div id="game-container" class="mx-auto flex bg-white border border-gray-200">
+    <div id="game-container" class="mx-auto flex bg-white border border-gray-200 overflow-hidden">
         
-        <!-- Panel de Información y Circuito -->
         <div id="circuit-panel" class="w-2/3 p-8 border-r border-gray-200 flex flex-col justify-between">
             <div>
                 <h1 class="text-3xl font-bold text-gray-800 mb-2">Simulador de Multímetro Seguro</h1>
-                <p class="text-gray-500 mb-6">Arrastra las sondas a los puntos de prueba (A, B, C) y gira la perilla para medir.</p>
+                <p class="text-gray-500 mb-6">Arrastra la sonda roja y gira la perilla para medir.</p>
 
-                <!-- Área del Circuito SVG -->
                 <svg id="circuit-svg" viewBox="0 0 600 300" class="w-full h-auto bg-white border border-gray-300 rounded-lg shadow-inner">
-                    <!-- Componentes (Fondo) -->
-                    <rect x="50" y="50" width="500" height="200" fill="#E5E7EB" rx="10" ry="10"/>
-                    
-                    <!-- Fuente de Voltaje (Batería) -->
-                    <rect x="70" y="80" width="40" height="100" fill="#FBBF24" rx="5" ry="5"/>
+                    <rect x="50" y="50" width="500" height="200" fill="#E5E7EB" rx="10"/>
+                    <rect x="70" y="80" width="40" height="100" fill="#FBBF24" rx="5"/>
                     <text x="90" y="140" fill="#1F2937" font-size="12" text-anchor="middle">12 V</text>
-                    
-                    <!-- Resistencia R1 -->
-                    <rect x="150" y="130" width="100" height="20" fill="#EF4444" rx="5" ry="5"/>
+                    <rect x="150" y="130" width="100" height="20" fill="#EF4444" rx="5"/>
                     <text x="200" y="145" fill="#1F2937" font-size="12" text-anchor="middle">100 Ω</text>
-                    
-                    <!-- Resistencia R2 -->
-                    <rect x="350" y="130" width="100" height="20" fill="#10B981" rx="5" ry="5"/>
+                    <rect x="350" y="130" width="100" height="20" fill="#10B981" rx="5"/>
                     <text x="400" y="145" fill="#1F2937" font-size="12" text-anchor="middle">50 Ω</text>
-
-                    <!-- Puntos de prueba (Targets) -->
-                    <circle id="targetA" class="target" cx="110" cy="180" r="12" data-type="V" data-value="12.0" data-label="Punto A (Positivo)" />
+                    <circle id="targetA" class="target" cx="110" cy="180" r="12" data-type="V" data-value="12.0" data-label="Punto A"/>
                     <text x="110" y="205" fill="#1F2937" font-size="14" text-anchor="middle">A</text>
-
-                    <circle id="targetB" class="target" cx="250" cy="140" r="12" data-type="V" data-value="8.0" data-label="Punto B" />
+                    <circle id="targetB" class="target" cx="250" cy="140" r="12" data-type="V" data-value="8.0" data-label="Punto B"/>
                     <text x="250" y="165" fill="#1F2937" font-size="14" text-anchor="middle">B</text>
-                    
-                    <circle id="targetC" class="target" cx="450" cy="140" r="12" data-type="R" data-value="150" data-label="Punto C (Resistencia Total)" />
+                    <circle id="targetC" class="target" cx="450" cy="140" r="12" data-type="R" data-value="150" data-label="Punto C"/>
                     <text x="450" y="165" fill="#1F2937" font-size="14" text-anchor="middle">C</text>
-
-                    <circle id="targetGND" class="target" cx="70" cy="180" r="12" data-type="GND" data-value="0.0" data-label="GND (Negativo)" />
+                    <circle id="targetGND" class="target" cx="70" cy="180" r="12" data-type="GND" data-value="0.0" data-label="GND"/>
                     <text x="70" y="205" fill="#1F2937" font-size="14" text-anchor="middle">GND</text>
                 </svg>
             </div>
-            
-            <!-- Leyenda de Conexión -->
             <div class="mt-8">
-                <h3 class="text-xl font-semibold text-gray-700 mb-2">Instrucciones de Conexión</h3>
+                <h3 class="text-xl font-semibold text-gray-700 mb-2">Instrucciones</h3>
                 <ul class="list-disc list-inside text-sm text-gray-600">
-                    <li>Voltaje ($\text{V}$) y Corriente ($\text{A}$): Mide entre dos puntos del circuito energizado.</li>
-                    <li>Resistencia ($\Omega$): Mide entre dos puntos **SIN ENERGÍA** (GND es el punto de referencia).</li>
-                    <li class="font-bold text-red-500">¡Advertencia! Conectar las sondas en el modo Amperaje ($\text{A}$) puede quemar el fusible si no se hace correctamente.</li>
+                    <li>Voltaje (V): Mide entre dos puntos del circuito.</li>
+                    <li>Resistencia (Ω): Mide en un circuito **SIN ENERGÍA**.</li>
+                    <li class="font-bold text-red-500">Advertencia: Medir voltaje en modo Amperaje (A) quemará el fusible.</li>
                 </ul>
             </div>
         </div>
 
-        <!-- Panel del Multímetro -->
         <div id="multimeter-panel" class="w-1/3 p-6 flex flex-col items-center bg-gray-100">
             <h2 class="text-2xl font-bold text-gray-700 mb-4">Multímetro Digital</h2>
-
-            <!-- Multímetro (Representación SVG) -->
             <svg viewBox="0 0 300 350" class="w-full h-auto">
-                <!-- Cuerpo del Multímetro -->
                 <rect x="20" y="20" width="260" height="310" rx="20" fill="#374151" stroke="#1F2937" stroke-width="4"/>
-
-                <!-- Pantalla LCD -->
                 <rect x="40" y="40" width="220" height="70" rx="5" id="lcd-display"/>
                 <text x="150" y="88" id="lcd-text" text-anchor="middle">OFF</text>
-
-                <!-- Perilla Selectora -->
                 <circle cx="150" cy="200" r="60" fill="#1F2937" stroke="#4B5563" stroke-width="3"/>
                 <circle cx="150" cy="200" r="50" fill="#9CA3AF"/>
-                
-                <!-- Indicadores de función -->
                 <text x="180" y="130" font-size="14" fill="white">V~</text>
                 <text x="210" y="170" font-size="14" fill="white">V</text>
                 <text x="210" y="235" font-size="14" fill="white">Ω</text>
                 <text x="180" y="275" font-size="14" fill="white">A</text>
-                
-                <!-- Dial (Perilla) - Este elemento es el que gira -->
                 <g id="dial-indicator" class="multimeter-dial" transform="rotate(270, 150, 200)">
                     <rect x="140" y="145" width="20" height="55" fill="#DC2626" rx="5"/>
                 </g>
-
-                <!-- Conexiones para Sondas -->
-                <circle cx="110" cy="295" r="15" fill="#9CA3AF"/>
-                <circle cx="190" cy="295" r="15" fill="#9CA3AF"/>
-            </svg>
-
-            <!-- Sondas (Probes) -->
-            <!-- Es necesario que las sondas estén DENTRO del mismo SVG para que Draggable funcione correctamente con coordenadas relativas -->
-            <svg id="probe-svg" viewBox="0 0 600 300" class="w-full h-24 mt-[-100px]" style="overflow: visible;">
-                 <!-- Las coordenadas x1 y x2 deben ser relativas al circuito-svg, no al probe-svg, para arrastrar fuera de este pequeño SVG -->
-                
-                <!-- Sonda Negra (COM - Constante) -->
-                <line x1="110" y1="20" x2="110" y2="90" stroke="#111827" class="probe" id="probeBlackLine"/>
-                <circle cx="110" cy="90" fill="#111827" stroke="#374151" class="probe-tip" id="probeBlackTip" data-color="black" data-connected-target="targetGND" />
-                <!-- La Sonda Negra se mantiene fija, solo la punta Roja es arrastrable -->
-
-                <!-- Sonda Roja (Mide - Arrastrable) -->
-                <line x1="190" y1="20" x2="190" y2="90" stroke="#DC2626" class="probe" id="probeRedLine"/>
-                <circle cx="190" y="90" fill="#DC2626" stroke="#EF4444" class="probe-tip" id="probeRedTip" data-color="red" data-connected-target="targetA"/>
-                
-                <text x="110" y="35" fill="#111827" text-anchor="middle" font-size="12">COM</text>
-                <text x="190" y="35" fill="#DC2626" text-anchor="middle" font-size="12">V/Ω/A</text>
+                <circle cx="110" cy="295" r="15" fill="#262626" id="com-port"/>
+                <circle cx="190" cy="295" r="15" fill="#DC2626" id="main-port"/>
             </svg>
         </div>
+
+        <svg id="probe-svg" class="absolute w-full h-full top-0 left-0 pointer-events-none">
+            <line id="probeBlackLine" stroke="#111827" stroke-width="2.5"/>
+            <circle id="probeBlackTip" class="probe-tip" fill="#111827" r="5"/>
+            
+            <line id="probeRedLine" stroke="#DC2626" stroke-width="2.5"/>
+             <circle id="probeRedTip" class="probe probe-tip" fill="#DC2626" r="5" style="pointer-events: all;"/>
+        </svg>
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            gsap.registerPlugin(Draggable);
+    document.addEventListener('DOMContentLoaded', () => {
+        gsap.registerPlugin(Draggable);
 
-            const dialIndicator = document.getElementById('dial-indicator');
-            const probeRedTip = document.getElementById('probeRedTip');
-            const probeRedLine = document.getElementById('probeRedLine');
-            const probeBlackTip = document.getElementById('probeBlackTip');
-            const probeBlackLine = document.getElementById('probeBlackLine');
-            const lcdText = document.getElementById('lcd-text');
-            const targets = Array.from(document.querySelectorAll('.target'));
-            const feedbackMessage = document.getElementById('feedback-message');
-            const circuitSvg = document.getElementById('circuit-svg');
-            
-            // --- CONSTANTES ---
-            const DIAL_POSITIONS = { 'OFF': 270, 'V~': 300, 'V': 330, 'Ω': 30, 'A': 60 };
-            let currentFunction = 'OFF';
-            let connectedTargets = { red: 'targetA', black: 'targetGND' };
+        // --- ELEMENTOS DEL DOM ---
+        const dialIndicator = document.getElementById('dial-indicator');
+        const lcdText = document.getElementById('lcd-text');
+        const targets = Array.from(document.querySelectorAll('.target'));
+        const feedbackMessage = document.getElementById('feedback-message');
+        const probeRedTip = document.getElementById('probeRedTip');
+        const probeRedLine = document.getElementById('probeRedLine');
+        const probeBlackTip = document.getElementById('probeBlackTip');
+        const probeBlackLine = document.getElementById('probeBlackLine');
+        const mainPort = document.getElementById('main-port');
+        const comPort = document.getElementById('com-port');
 
-            // Coordenadas fijas de conexión al multímetro (desde el punto de vista del probe-svg)
-            const PROBE_RED_ANCHOR_X = 190;
-            const PROBE_RED_ANCHOR_Y = 20;
+        // --- ESTADO DE LA SIMULACIÓN ---
+        let currentFunction = 'OFF';
+        let connectedTargets = { red: null, black: 'targetGND' };
 
-            // --- LÓGICA DE SIMULACIÓN (performMeasurement y showFeedback) ---
+        // --- FUNCIONES ---
+        const getAbsCoords = (element) => {
+            const rect = element.getBoundingClientRect();
+            return {
+                x: rect.left + rect.width / 2 + window.scrollX,
+                y: rect.top + rect.height / 2 + window.scrollY
+            };
+        }
 
-            function showFeedback(message, type) {
-                feedbackMessage.textContent = message;
-                feedbackMessage.className = 'flash-message fixed top-4 right-4 p-4 rounded-lg shadow-xl text-white z-50 flash-visible';
+        function showFeedback(message, type) {
+            feedbackMessage.textContent = message;
+            feedbackMessage.className = 'flash-message fixed top-4 right-4 p-4 rounded-lg shadow-xl text-white z-50 flash-visible';
+            const colorClass = type === 'success' ? 'bg-green-500' : type === 'warning' ? 'bg-yellow-500' : 'bg-red-600';
+            feedbackMessage.classList.add(colorClass);
 
-                if (type === 'success') {
-                    feedbackMessage.classList.add('bg-green-500');
-                } else if (type === 'warning') {
-                    feedbackMessage.classList.add('bg-yellow-500');
-                } else if (type === 'error') {
-                    feedbackMessage.classList.add('bg-red-600');
-                }
-
-                gsap.to(feedbackMessage, {
-                    opacity: 0,
-                    y: 10,
-                    duration: 0.5,
-                    delay: 3,
-                    onComplete: () => {
-                        feedbackMessage.className = 'flash-message fixed top-4 right-4 p-4 rounded-lg shadow-xl text-white z-50';
-                    }
-                });
-            }
-
-            function performMeasurement() {
-                const targetRed = document.getElementById(connectedTargets.red);
-                const targetBlack = document.getElementById(connectedTargets.black);
-                
-                if (!targetRed || !targetBlack || currentFunction === 'OFF') return lcdText.textContent = currentFunction === 'OFF' ? 'OFF' : "---";
-
-                const typeRed = targetRed.dataset.type;
-                const valueRed = parseFloat(targetRed.dataset.value);
-                const typeBlack = targetBlack.dataset.type;
-                const valueBlack = parseFloat(targetBlack.dataset.value);
-
-                if (connectedTargets.red === connectedTargets.black) {
-                    lcdText.textContent = currentFunction === 'Ω' ? "0.00 Ω" : "0.00 V";
-                    return;
-                }
-
-                // Lógica de DAÑO: Modo Amperaje (A) conectado a Voltaje (V)
-                if (currentFunction === 'A') {
-                    if (typeRed === 'V' || typeBlack === 'V') {
-                         gsap.to([probeRedTip, probeBlackTip], { duration: 0.1, fill: '#FF0000', repeat: 5, yoyo: true });
-                         lcdText.textContent = "FUSE";
-                         showFeedback("¡FUSIBLE QUEMADO! No se mide voltaje o resistencia en modo Amperaje (A).", 'error');
-                         return;
-                    }
-                }
-                
-                // Lógica de Voltaje (V) y Voltaje Alterno (V~)
-                if (currentFunction === 'V' || currentFunction === 'V~') {
-                    if (typeRed === 'V' || typeBlack === 'V' || typeRed === 'GND' || typeBlack === 'GND') {
-                        // Medición diferencial
-                        const voltageDiff = Math.abs(valueRed - valueBlack);
-                        lcdText.textContent = `${voltageDiff.toFixed(2)} V`;
-                        showFeedback(`Medición V: ${voltageDiff.toFixed(2)} V.`, 'success');
-                    } else {
-                        lcdText.textContent = "OL";
-                    }
-                    return;
-                }
-
-                // Lógica de Resistencia (Ω)
-                if (currentFunction === 'Ω') {
-                    if (typeRed === 'R' && typeBlack === 'GND') {
-                         lcdText.textContent = `${valueRed.toFixed(1)} Ω`;
-                         showFeedback(`Resistencia total del circuito: ${valueRed.toFixed(1)} Ω.`, 'success');
-                    } else if (typeRed === 'V' || typeBlack === 'V') {
-                        lcdText.textContent = "OL";
-                        showFeedback("¡ERROR! Mide resistencia solo en circuitos sin energía (OFF).", 'warning');
-                    } else {
-                        lcdText.textContent = "OL";
-                    }
-                    return;
-                }
-
-                lcdText.textContent = "---";
-            }
-
-            // --- INICIALIZACIÓN DE DRAGGABLE ---
-
-            // 1. Perilla Selectora
-            Draggable.create(dialIndicator, {
-                type: "rotation",
-                bounds: { minRotation: 270, maxRotation: 420 },
-                liveSnap: true,
-                snap: [270, 300, 330, 30 + 360, 60 + 360],
-                onDragStart: function() {
-                    gsap.killTweensOf(dialIndicator);
-                },
-                onDragEnd: function() {
-                    let rotation = this.rotation % 360;
-                    if (rotation < 0) rotation += 360;
-                    
-                    let newFunction = 'OFF';
-                    if (rotation >= 290 && rotation < 315) newFunction = 'V~';
-                    else if (rotation >= 315 && rotation < 345) newFunction = 'V';
-                    else if (rotation >= 15 && rotation < 45) newFunction = 'Ω';
-                    else if (rotation >= 45 && rotation < 75) newFunction = 'A';
-
-                    if (newFunction !== currentFunction) {
-                        currentFunction = newFunction;
-                        lcdText.textContent = newFunction === 'OFF' ? 'OFF' : '0.00';
-                        showFeedback(`Función seleccionada: ${currentFunction}`, 'warning');
-                        performMeasurement();
-                    }
-                }
+            gsap.to(feedbackMessage, {
+                opacity: 0, y: -10, duration: 0.5, delay: 3,
+                onComplete: () => feedbackMessage.className = 'flash-message fixed top-4 right-4 p-4 rounded-lg shadow-xl text-white z-50'
             });
+        }
+        
+        function performMeasurement() {
+            // Lógica de medición (sin cambios)
+            if (currentFunction === 'OFF') { lcdText.textContent = 'OFF'; return; }
+            if (!connectedTargets.red || !connectedTargets.black) { lcdText.textContent = '---'; return; }
 
-            // 2. Sonda Roja Arrastrable
+            const targetRed = document.getElementById(connectedTargets.red);
+            const targetBlack = document.getElementById(connectedTargets.black);
             
-            function getClosestTarget(probeTipElement, targets) {
-                // Obtiene la posición de la punta de la sonda en coordenadas de pantalla
-                const tipRect = probeTipElement.getBoundingClientRect();
-                const tipX = tipRect.left + tipRect.width / 2;
-                const tipY = tipRect.top + tipRect.height / 2;
+            const valueRed = parseFloat(targetRed.dataset.value), typeRed = targetRed.dataset.type;
+            const valueBlack = parseFloat(targetBlack.dataset.value), typeBlack = targetBlack.dataset.type;
+
+            if (connectedTargets.red === connectedTargets.black) { lcdText.textContent = currentFunction === 'Ω' ? "0.00 Ω" : "0.00 V"; return; }
+            if (currentFunction === 'A' && (typeRed === 'V' || typeBlack === 'V')) {
+                gsap.to(probeRedTip, { fill: '#FFD700', repeat: 5, yoyo: true, duration: 0.1 });
+                lcdText.textContent = "FUSE";
+                showFeedback("¡FUSIBLE QUEMADO! No se mide voltaje en modo Amperaje.", 'error'); return;
+            }
+            if (currentFunction === 'V' || currentFunction === 'V~') {
+                if ((typeRed === 'V' || typeRed === 'GND') && (typeBlack === 'V' || typeBlack === 'GND')) {
+                    lcdText.textContent = `${Math.abs(valueRed - valueBlack).toFixed(2)} V`;
+                } else { lcdText.textContent = "OL"; }
+                return;
+            }
+            if (currentFunction === 'Ω') {
+                if (typeRed === 'R' && typeBlack === 'GND') {
+                    lcdText.textContent = `${valueRed.toFixed(1)} Ω`;
+                } else if (typeRed === 'V' || typeBlack === 'V') {
+                    lcdText.textContent = "OL";
+                    showFeedback("¡ERROR! Mide resistencia solo en circuitos SIN energía.", 'warning');
+                } else { lcdText.textContent = "OL"; }
+                return;
+            }
+            lcdText.textContent = "---";
+        }
+
+        // --- INTERACCIONES ---
+        Draggable.create(dialIndicator, {
+            type: "rotation",
+            bounds: { minRotation: 270, maxRotation: 420 },
+            liveSnap: true,
+            snap: [270, 300, 330, 360 + 30, 360 + 60],
+            onDragEnd: function() {
+                let r = this.rotation % 360;
+                r = r < 0 ? r + 360 : r;
+                let fn = 'OFF';
+                if (r >= 290 && r < 315) fn = 'V~';
+                else if (r >= 315 && r < 345) fn = 'V';
+                else if (r >= 15 && r < 45) fn = 'Ω';
+                else if (r >= 45 && r < 75) fn = 'A';
+                if (fn !== currentFunction) {
+                    currentFunction = fn;
+                    showFeedback(`Función: ${currentFunction}`, 'warning');
+                    performMeasurement();
+                }
+            }
+        });
+
+        Draggable.create(probeRedTip, {
+            bounds: window,
+            onPress: function() { gsap.to(this.target, { attr: { r: 8 }, duration: 0.1 }); },
+            onDrag: function() {
+                const portCoords = getAbsCoords(mainPort);
+                gsap.set(probeRedLine, { attr: { x1: portCoords.x, y1: portCoords.y, x2: this.pointerX, y2: this.pointerY } });
+            },
+            onRelease: function() {
+                gsap.to(this.target, { attr: { r: 5 }, duration: 0.1 });
+                if (connectedTargets.red) document.getElementById(connectedTargets.red).classList.remove('target-connected');
                 
-                let closest = null;
-                let minDistance = 30; // Distancia máxima para "conectar"
-
+                let closestTarget = null, minDistance = 40;
                 targets.forEach(target => {
-                    // Obtiene la posición del target en coordenadas de pantalla
-                    const targetRect = target.getBoundingClientRect();
-                    const targetX = targetRect.left + targetRect.width / 2;
-                    const targetY = targetRect.top + targetRect.height / 2;
-                    
-                    const distance = Math.sqrt(Math.pow(tipX - targetX, 2) + Math.pow(tipY - targetY, 2));
-
+                    const targetCoords = getAbsCoords(target);
+                    const distance = Math.hypot(this.pointerX - targetCoords.x, this.pointerY - targetCoords.y);
                     if (distance < minDistance) {
                         minDistance = distance;
-                        closest = target;
+                        closestTarget = target;
                     }
                 });
-                return closest;
-            }
 
-            // CORRECCIÓN CLAVE: El Draggable debe ser sobre probeRedTip, 
-            // y las coordenadas deben ser relativas a su contenedor SVG.
-            const redDraggable = Draggable.create(probeRedTip, {
-                type: 'x,y',
-                // Bounds es ahora la ventana entera (document.body) ya que el cable es largo,
-                // pero lo limitamos visualmente al área del circuito.
-                onDrag: function() {
-                    // Actualiza la línea de la sonda (desde el punto de anclaje hasta la punta)
-                    probeRedLine.setAttribute('x2', parseFloat(probeRedTip.getAttribute('cx')) + this.x);
-                    probeRedLine.setAttribute('y2', parseFloat(probeRedTip.getAttribute('cy')) + this.y);
-                },
-                onDragEnd: function() {
-                    const closestTarget = getClosestTarget(probeRedTip, targets);
-                    
-                    // Limpiar el estado visual del target anterior
-                    const prevTarget = document.getElementById(connectedTargets.red);
-                    if(prevTarget) prevTarget.classList.remove('target-connected');
-
-                    if (closestTarget) {
-                        const targetID = closestTarget.id;
-                        connectedTargets.red = targetID;
-                        closestTarget.classList.add('target-connected');
-                        
-                        // SNAP VISUAL: Mover la punta al centro del target (sin cambiar las coordenadas X, Y del Draggable)
-                        const targetX = parseFloat(closestTarget.getAttribute('cx'));
-                        const targetY = parseFloat(closestTarget.getAttribute('cy'));
-                        
-                        // Calcula el desplazamiento necesario
-                        const currentX = parseFloat(probeRedTip.getAttribute('cx'));
-                        const currentY = parseFloat(probeRedTip.getAttribute('cy'));
-                        
-                        // Mueve el Draggable (y por ende la punta) a la posición exacta del target.
-                        // Usamos GSAP para mover el elemento Draggable (que usa transform: translate)
-                        gsap.to(probeRedTip, {
-                            duration: 0.1, 
-                            x: targetX - currentX, 
-                            y: targetY - currentY,
-                            onUpdate: function() {
-                                // Mantiene la línea conectada durante la animación
-                                probeRedLine.setAttribute('x2', targetX);
-                                probeRedLine.setAttribute('y2', targetY);
-                            }
-                        });
-                        
-                        showFeedback(`Sonda Roja conectada a ${closestTarget.dataset.label}.`, 'success');
-                        
-                        performMeasurement();
-
-                    } else {
-                        // Regresar a la posición inicial si no se conecta
-                        gsap.to(probeRedTip, { duration: 0.3, x: 0, y: 0 });
-                        gsap.to(probeRedLine, { duration: 0.3, attr: { x2: PROBE_RED_ANCHOR_X, y2: PROBE_RED_ANCHOR_Y } });
-                        
-                        showFeedback("Sonda Roja desconectada. Regresando a posición inicial.", 'warning');
-                        connectedTargets.red = null;
-                        
-                        performMeasurement();
-                    }
+                if (closestTarget) {
+                    connectedTargets.red = closestTarget.id;
+                    closestTarget.classList.add('target-connected');
+                    const targetCoords = getAbsCoords(closestTarget);
+                    gsap.to(this.target, { attr: { cx: targetCoords.x, cy: targetCoords.y }, duration: 0.2 });
+                    gsap.to(probeRedLine, { attr: { x2: targetCoords.x, y2: targetCoords.y }, duration: 0.2 });
+                } else {
+                    connectedTargets.red = null;
+                    const portCoords = getAbsCoords(mainPort);
+                    gsap.to(this.target, { attr: { cx: portCoords.x, cy: portCoords.y }, duration: 0.3 });
+                    gsap.to(probeRedLine, { attr: { x2: portCoords.x, y2: portCoords.y }, duration: 0.3 });
                 }
-            })[0]; // Captura la instancia de Draggable
-
-            // --- Lógica de Inicialización (Conexión por defecto) ---
-            
-            function initializeProbes() {
-                // Inicialización de la Sonda Roja (Volver a la posición 0,0)
-                gsap.set(probeRedTip, { x: 0, y: 0 });
-                probeRedLine.setAttribute('x2', PROBE_RED_ANCHOR_X);
-                probeRedLine.setAttribute('y2', PROBE_RED_ANCHOR_Y);
-                
-                // Desconectar visualmente
-                const defaultTargetRed = document.getElementById(probeRedTip.dataset.connectedTarget);
-                if (defaultTargetRed) defaultTargetRed.classList.remove('target-connected');
-
-                // Mantener sonda negra fija (por ahora)
-                const defaultTargetBlack = document.getElementById(probeBlackTip.dataset.connectedTarget);
-                if (defaultTargetBlack) defaultTargetBlack.classList.add('target-connected');
-            
-                connectedTargets.red = null;
-                connectedTargets.black = probeBlackTip.dataset.connectedTarget; // targetGND
-
-                showFeedback("¡Bienvenido al simulador! Gira la perilla (dial) y arrastra la sonda roja (V/Ω/A).", 'success');
+                performMeasurement();
             }
-            
-            // Inicializar el simulador
-            initializeProbes();
         });
+
+        // --- INICIALIZACIÓN ---
+        function updateProbePositions() {
+            const mainPortCoords = getAbsCoords(mainPort);
+            const comPortCoords = getAbsCoords(comPort);
+            const gndTargetCoords = getAbsCoords(document.getElementById('targetGND'));
+
+            gsap.set(probeBlackTip, { attr: { cx: gndTargetCoords.x, cy: gndTargetCoords.y } });
+            gsap.set(probeBlackLine, { attr: { x1: comPortCoords.x, y1: comPortCoords.y, x2: gndTargetCoords.x, y2: gndTargetCoords.y } });
+
+            if (!connectedTargets.red) {
+                gsap.set(probeRedTip, { attr: { cx: mainPortCoords.x, cy: mainPortCoords.y } });
+                gsap.set(probeRedLine, { attr: { x1: mainPortCoords.x, y1: mainPortCoords.y, x2: mainPortCoords.x, y2: mainPortCoords.y } });
+            }
+        }
+
+        function initialize() {
+            document.getElementById('targetGND').classList.add('target-connected');
+            updateProbePositions();
+            window.addEventListener('resize', updateProbePositions);
+            showFeedback("Simulador listo. ¡A medir!", 'success');
+        }
+
+        initialize();
+    });
     </script>
 </body>
 </html>
