@@ -6,24 +6,92 @@
     <title>Inventario - Laboratorio</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
+        /* COLORES INSTITUCIONALES (Azul marino oscuro y complementario del Tecnológico) */
+        :root {
+            --color-principal: #003366; /* Azul Marino Oscuro */
+            --color-secundario: #6699CC; /* Azul Claro/Medio */
+            --color-texto-claro: white;
+        }
+
         body {
             font-family: Arial, sans-serif;
             padding: 20px;
+            background-color: #f7f9fc; /* Fondo claro para contraste */
         }
-        .header-section {
+        
+        /* 🎨 NUEVO: Estilos para el encabezado/banner */
+        .top-banner {
+            background-color: var(--color-principal);
+            color: var(--color-texto-claro);
+            padding: 10px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            /* Expande para cubrir el padding del body y se vea como un banner completo */
+            margin: -20px -20px 20px -20px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
-        .main-title {
+        
+        .logo-img {
+            max-height: 50px; /* Ajusta el tamaño del logo */
+        }
+        
+        /* Estilos del Breadcrumb (Ruta de Navegación) */
+        .breadcrumb-nav a {
+            color: var(--color-secundario);
+            text-decoration: none;
+            transition: color 0.2s;
+            padding: 5px;
+            border-radius: 5px;
+        }
+        .breadcrumb-nav a:hover {
+            color: var(--color-texto-claro);
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        .breadcrumb-nav span {
+            color: var(--color-secundario);
+            margin: 0 5px;
             font-weight: bold;
         }
-        .nav-link {
-            text-decoration: none;
-            color: #007bff;
-            padding-right: 10px;
+        .breadcrumb-nav .active-page {
+            color: var(--color-texto-claro);
+            font-weight: bold;
         }
+        
+        .main-title {
+            font-weight: 700;
+            color: var(--color-principal);
+        }
+
+        /* Botones de acción principal */
+        .btn-principal {
+            background-color: var(--color-principal) !important; 
+            border-color: var(--color-principal) !important;
+            color: var(--color-texto-claro) !important;
+            transition: background-color 0.2s;
+        }
+        .btn-principal:hover {
+            background-color: #004d99 !important; /* Un poco más oscuro */
+        }
+
+        /* Color personalizado para Eliminar y Modificar */
+        .btn-custom-danger, .modal-header.bg-custom-danger {
+            background-color: #dc3545 !important; 
+            border-color: #dc3545 !important;
+            color: white !important;
+        }
+        
+        /* Botón Guardar Cambios (Modificar) con color secundario */
+        .btn-warning-custom {
+            background-color: var(--color-secundario) !important;
+            border-color: var(--color-secundario) !important;
+            color: var(--color-texto-claro) !important;
+        }
+        .btn-warning-custom:hover {
+            background-color: #79a6d2 !important;
+        }
+
+        /* Otros estilos... */
         .action-button {
             margin-right: 10px;
         }
@@ -42,16 +110,15 @@
             cursor: pointer;
         }
         .inventory-table tr.selected {
-            background-color: #cfe2ff !important; /* Color de selección para Bootstrap (Azul claro) */
+            background-color: #cfe2ff !important; 
         }
         
-        /* Estilos para el encabezado de la tabla */
         .inventory-table th {
-            background-color: #f8f9fa;
+            background-color: #e9ecef; /* Más claro que el f8f9fa */
             border-bottom: 2px solid #dee2e6;
+            color: var(--color-principal);
         }
         
-        /* Estilo para el contenedor de mensajes flash */
         .flash-messages-container {
             position: fixed;
             top: 20px;
@@ -59,17 +126,25 @@
             z-index: 1050; 
             max-width: 300px;
         }
-
-        /* 🎨 Color personalizado para Eliminar y Modificar */
-        .btn-custom-danger, .modal-header.bg-custom-danger {
-            background-color: #ab4242 !important;
-            border-color: #ab4242 !important;
-            color: white !important;
-        }
     </style>
 </head>
 <body>
 
+    <div class="top-banner">
+        <div class="d-flex align-items-center breadcrumb-nav">
+            {% if usuario_rol == 'admin' or usuario_rol == 'jefe' or usuario_rol == '0' %}
+                <a href="{{ url_for('interface_admin') }}">Inicio Admin</a>
+            {% elif usuario_rol == 'auxiliar' or usuario_rol == '1' %}
+                <a href="{{ url_for('interface_aux') }}">Inicio Auxiliar</a>
+            {% else %}
+                <a href="{{ url_for('login') }}">Inicio</a>
+            {% endif %}
+            
+            <span>&gt;</span>
+            <span class="active-page">Inventario</span>
+        </div>
+        <img src="{{ url_for('static', filename='sources/itislogo.png') }}" alt="Logo Tecnológico Saltillo" class="logo-img">
+    </div>
     <div class="flash-messages-container">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
@@ -83,19 +158,11 @@
         {% endwith %}
     </div>
 
-    <nav class="header-section">
-        <div class="d-flex align-items-center">
-            <span class="nav-link text-muted"><a href="{{ url_for('inventario') }}">Inventario</a></span>
-            <span class="nav-link">&gt;</span>
-        </div>
-    </nav>
-    <hr>
-
-    <h2 class="main-title mb-4">Material</h2>
+    <h2 class="main-title mb-4">Gestión de Materiales</h2>
     <div class="d-flex mb-4 align-items-center">
-        <button class="btn btn-primary action-button" data-bs-toggle="modal" data-bs-target="#agregarMaterialModal">Agregar material</button>
+        <button class="btn btn-principal action-button" data-bs-toggle="modal" data-bs-target="#agregarMaterialModal">Agregar material</button>
         <button id="btnEliminar" class="btn btn-custom-danger action-button" disabled>Eliminar material</button>
-        <button id="btnModificar" class="btn btn-custom-danger action-button" data-bs-toggle="modal" data-bs-target="#modificarMaterialModal" disabled>Modificar material</button>
+        <button id="btnModificar" class="btn btn-warning-custom action-button" data-bs-toggle="modal" data-bs-target="#modificarMaterialModal" disabled>Modificar material</button>
         
         <div class="input-group ms-auto" style="max-width: 300px;">
             <input type="text" class="form-control" id="inputBusqueda" placeholder="Buscar material" aria-label="Buscar material">
@@ -134,7 +201,7 @@
                     <td>{{ material.CANTIDAD_DISPONIBLE }}</td>
                     <td>
                         {{ material.ESTATUS }}
-                        {% set status_class = 'disponible' if material.ESTATUS == 'Disponible' else ('en-uso' if material.ESTATUS == 'En uso' else 'no-disponible') %}
+                        {% set status_class = 'disponible' if material.ESTATUS|upper == 'DISPONIBLE' else ('en-uso' if material.ESTATUS|upper == 'EN USO' else 'no-disponible') %}
                         <span class="status-dot {{ status_class }}"></span>
                     </td>
                 </tr>
@@ -149,12 +216,17 @@
     </div>
 
     <div class="mt-5">
-        <a href="#" class="btn btn-outline-secondary">
+        {% if usuario_rol == 'admin' or usuario_rol == 'jefe' or usuario_rol == '0' %}
+            <a href="{{ url_for('interface_admin') }}" class="btn btn-outline-secondary">
+        {% elif usuario_rol == 'auxiliar' or usuario_rol == '1' %}
+            <a href="{{ url_for('interface_aux') }}" class="btn btn-outline-secondary">
+        {% else %}
+            <a href="{{ url_for('login') }}" class="btn btn-outline-secondary">
+        {% endif %}
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-left" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z"/></svg>
             Regresar
         </a>
     </div>
-
     <div class="modal fade" id="agregarMaterialModal" tabindex="-1" aria-labelledby="agregarMaterialModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -180,12 +252,11 @@
                             <label for="addCantidad" class="form-label">Cantidad *</label>
                             <input type="number" class="form-control" id="addCantidad" name="cantidad" required min="1">
                         </div>
-                        <!-- CAMPO ESTATUS (ESTADO) ELIMINADO CORRECTAMENTE -->
                         <small class="text-danger">* Campos obligatorios</small>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-primary">Guardar Material</button>
+                        <button type="submit" class="btn btn-principal">Guardar Material</button>
                     </div>
                 </form>
             </div>
@@ -219,12 +290,11 @@
                             <label for="modCantidad" class="form-label">Cantidad *</label>
                             <input type="number" class="form-control" id="modCantidad" name="cantidad" required min="1">
                         </div>
-                        <!-- CAMPO ESTATUS (ESTADO) ELIMINADO CORRECTAMENTE -->
                         <small class="text-danger">* Campos obligatorios</small>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-warning">Guardar Cambios</button>
+                        <button type="submit" class="btn btn-warning-custom">Guardar Cambios</button>
                     </div>
                 </form>
             </div>

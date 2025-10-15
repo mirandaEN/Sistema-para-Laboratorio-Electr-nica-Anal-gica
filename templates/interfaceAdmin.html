@@ -10,7 +10,8 @@
     
     <header>
         <div class="menu container">
-            <a href="#" class="logo">Instituto Tecnológico de Saltillo</a>
+            <!-- 🔑 CORREGIDO: Vuelve al menú principal del Admin (Refresh) -->
+            <a href="{{ url_for('interface_admin') }}" class="logo">Instituto Tecnológico de Saltillo</a>
             <input type="text" id="menu">
             <label for="menu">
                 <img src="/static/sources/menu.png" class="menu-icono" alt="">
@@ -18,11 +19,13 @@
             </label>
             <nav class="navbar">
                 <ul>
-                    <li><a href="#">Inicio</a></li>
-                    <li><a href="#">Prestamos</a></li>
+                    <!-- 🔑 CORREGIDO: Vuelve al menú principal del Admin (Refresh) -->
+                    <li><a href="{{ url_for('interface_admin') }}">Inicio</a></li>
+                    <li><a href="{{ url_for('prestamos') }}">Prestamos</a></li>
                     <li><a href="{{ url_for('inventario') }}">Inventario</a></li>
                     <li><a href="#">Generar reportes</a></li>
                     <li><a href="#">Gestión de auxiliares</a></li>
+                    <!-- ❌ ELIMINADO de aquí: El botón se mueve al final del cuerpo -->
                 </ul>
             </nav>
         </div>
@@ -30,6 +33,7 @@
             <div class="content">
                 <h1>Laboratorio de Electrónica / Analógica</h1>
                 <p>Bienvenido Administrador 💻</p>
+                <!-- 🔗 Botón Contacto -->
                 <a href="#" class="btn-1">Contacto</a>
             </div>
             <img class="banner" src="/static/sources/imagen-baner.png" alt="">
@@ -42,7 +46,7 @@
             <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. 
                 Error quae, voluptatibus rem officia distinctio soluta 
             </p>
-            <a href="#" class="btn-1">IR</a>
+            <a href="{{ url_for('prestamos') }}" class="btn-1">IR</a>
         </div>
         <div class="box">
             <img src="/static/sources/inventario.png" alt="">
@@ -69,5 +73,10 @@
             <a href="#" class="btn-1">IR</a>
         </div>
     </main>
+
+    <!-- 🌟 NUEVO: Contenedor para el botón de Cerrar Sesión fijo -->
+    <div class="logout-fixed">
+        <a href="{{ url_for('login') }}" class="btn-logout">Cerrar Sesión</a>
+    </div>
 </body>
 </html>

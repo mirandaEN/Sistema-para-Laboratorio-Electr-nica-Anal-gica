@@ -106,6 +106,30 @@ header {
     line-height: 40px;
 
 }
+.logout-fixed {
+    /* Clave: Fija el elemento a la ventana de navegación */
+    position: fixed; 
+    bottom: 20px;    /* 20px de separación del borde inferior */
+    right: 20px;     /* 20px de separación del borde derecho */
+    z-index: 1000;   /* Asegura que esté por encima de cualquier otro elemento */
+}
+
+.btn-logout {
+    /* Estilos visuales para que parezca botón y resalte */
+    color: white !important;           
+    background-color: #dc3545;         /* Rojo de peligro */
+    padding: 10px 20px;                
+    border-radius: 8px;                
+    text-decoration: none;             
+    font-weight: bold;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2); 
+    display: inline-block;
+    transition: background-color 0.3s;
+}
+
+.btn-logout:hover {
+    background-color: #a71d2a;
+}
 .btn-1{
     display: inline-block;
     background-color: #7d1818;

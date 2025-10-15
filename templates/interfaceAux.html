@@ -3,14 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bienvenido Administrador</title>
+    <title>Bienvenido Auxiliar</title>
     <link rel="stylesheet" href="/static/css/stile_inadmin.css">
 </head>
 <body>
     
     <header>
         <div class="menu container">
-            <a href="#" class="logo">Instituto Tecnológico de Saltillo</a>
+            <!-- 🔑 CORREGIDO: Vuelve al menú principal del Auxiliar (Refresh) -->
+            <a href="{{ url_for('interface_aux') }}" class="logo">Instituto Tecnológico de Saltillo</a>
             <input type="text" id="menu">
             <label for="menu">
                 <img src="/static/sources/menu.png" class="menu-icono" alt="">
@@ -18,11 +19,14 @@
             </label>
             <nav class="navbar">
                 <ul>
-                    <li><a href="#">Inicio</a></li>
+                    <!-- 🔑 CORREGIDO: Vuelve al menú principal del Auxiliar (Refresh) -->
+                    <li><a href="{{ url_for('interface_aux') }}">Inicio</a></li>
                     <li><a href="#">Prestamos</a></li>
-                    <li><a href="#">Inventario</a></li>
+                    <li><a href="{{ url_for('inventario') }}">Inventario</a></li>
                     <li><a href="#">Generar reportes</a></li>
                     <li><a href="#">Gestión de auxiliares</a></li>
+                    <!-- 🌟 NUEVO BOTÓN: Cerrar Sesión -->
+                    <li><a href="{{ url_for('login') }}" class="btn-logout">Cerrar Sesión</a></li>
                 </ul>
             </nav>
         </div>
@@ -50,7 +54,7 @@
             <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. 
                 Error quae, voluptatibus rem officia distinctio soluta 
             </p>
-            <a href="#" class="btn-1">IR</a>
+            <a href="{{ url_for('inventario') }}" class="btn-1">IR</a>
         </div>
     </main>
 </body>
