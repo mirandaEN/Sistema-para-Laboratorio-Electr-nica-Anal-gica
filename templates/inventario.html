@@ -3,441 +3,273 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inventario - Laboratorio</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Gestión de Inventario</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* COLORES INSTITUCIONALES (Azul marino oscuro y complementario del Tecnológico) */
-        :root {
-            --color-principal: #003366; /* Azul Marino Oscuro */
-            --color-secundario: #6699CC; /* Azul Claro/Medio */
-            --color-texto-claro: white;
-        }
-
-        body {
-            font-family: Arial, sans-serif;
-            padding: 20px;
-            background-color: #f7f9fc; /* Fondo claro para contraste */
-        }
-        
-        /* 🎨 NUEVO: Estilos para el encabezado/banner */
-        .top-banner {
-            background-color: var(--color-principal);
-            color: var(--color-texto-claro);
-            padding: 10px 20px;
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: #f8f9fa; margin: 0; }
+        .top-bar {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            /* Expande para cubrir el padding del body y se vea como un banner completo */
-            margin: -20px -20px 20px -20px; 
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            padding: 10px 40px;
+            background-color: #7d0015; /* Color institucional */
+            color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-        
-        .logo-img {
-            max-height: 50px; /* Ajusta el tamaño del logo */
+        .breadcrumb { font-size: 1.1em; }
+        .breadcrumb a { color: #f8f9fa; text-decoration: none; transition: color 0.3s; }
+        .breadcrumb a:hover { color: #fff; text-decoration: underline; }
+        .breadcrumb span { margin: 0 10px; color: #dee2e6; }
+        .top-bar .logo { height: 50px; }
+        .container { max-width: 1200px; margin: 20px auto; padding: 20px; background-color: #fff; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1 { color: #343a40; border-bottom: 2px solid #dee2e6; padding-bottom: 10px; margin-top: 0; }
+        .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+        .actions button, .actions a { background-color: #007bff; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; text-decoration: none; font-size: 1em; }
+        .actions button.delete { background-color: #dc3545; }
+        .actions button.edit { background-color: #ffc107; color: #212529; }
+        .search-bar { display: flex; }
+        .search-bar input { border: 1px solid #ced4da; padding: 10px; border-radius: 5px 0 0 5px; width: 250px; }
+        .search-bar button { border: 1px solid #ced4da; background-color: #e9ecef; padding: 10px; border-radius: 0 5px 5px 0; cursor: pointer; }
+        .table-container { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #dee2e6; white-space: nowrap; }
+        th { background-color: #f8f9fa; font-weight: 600; }
+        .status-dot { height: 10px; width: 10px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+        .disponible { background-color: #28a745; }
+        .en-uso { background-color: #ffc107; }
+        .sin-stock { background-color: #dc3545; }
+        .flash {
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border: 1px solid transparent;
+            border-radius: .25rem;
+            transition: opacity 0.5s ease-out; /* <-- Transición para el fade-out */
         }
-        
-        /* Estilos del Breadcrumb (Ruta de Navegación) */
-        .breadcrumb-nav a {
-            color: var(--color-secundario);
-            text-decoration: none;
-            transition: color 0.2s;
-            padding: 5px;
-            border-radius: 5px;
-        }
-        .breadcrumb-nav a:hover {
-            color: var(--color-texto-claro);
-            background-color: rgba(255, 255, 255, 0.1);
-        }
-        .breadcrumb-nav span {
-            color: var(--color-secundario);
-            margin: 0 5px;
-            font-weight: bold;
-        }
-        .breadcrumb-nav .active-page {
-            color: var(--color-texto-claro);
-            font-weight: bold;
-        }
-        
-        .main-title {
-            font-weight: 700;
-            color: var(--color-principal);
-        }
-
-        /* Botones de acción principal */
-        .btn-principal {
-            background-color: var(--color-principal) !important; 
-            border-color: var(--color-principal) !important;
-            color: var(--color-texto-claro) !important;
-            transition: background-color 0.2s;
-        }
-        .btn-principal:hover {
-            background-color: #004d99 !important; /* Un poco más oscuro */
-        }
-
-        /* Color personalizado para Eliminar y Modificar */
-        .btn-custom-danger, .modal-header.bg-custom-danger {
-            background-color: #dc3545 !important; 
-            border-color: #dc3545 !important;
-            color: white !important;
-        }
-        
-        /* Botón Guardar Cambios (Modificar) con color secundario */
-        .btn-warning-custom {
-            background-color: var(--color-secundario) !important;
-            border-color: var(--color-secundario) !important;
-            color: var(--color-texto-claro) !important;
-        }
-        .btn-warning-custom:hover {
-            background-color: #79a6d2 !important;
-        }
-
-        /* Otros estilos... */
-        .action-button {
-            margin-right: 10px;
-        }
-        .status-dot {
-            height: 10px;
-            width: 10px;
-            border-radius: 50%;
-            display: inline-block;
-            margin-left: 5px;
-        }
-        .status-dot.disponible { background-color: #28a745; /* Verde */ }
-        .status-dot.en-uso { background-color: #ffc107; /* Amarillo */ }
-        .status-dot.no-disponible { background-color: #dc3545; /* Rojo */ }
-        
-        .inventory-table tr {
-            cursor: pointer;
-        }
-        .inventory-table tr.selected {
-            background-color: #cfe2ff !important; 
-        }
-        
-        .inventory-table th {
-            background-color: #e9ecef; /* Más claro que el f8f9fa */
-            border-bottom: 2px solid #dee2e6;
-            color: var(--color-principal);
-        }
-        
-        .flash-messages-container {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 1050; 
-            max-width: 300px;
-        }
+        .success { color: #155724; background-color: #d4edda; border-color: #c3e6cb; }
+        .danger { color: #721c24; background-color: #f8d7da; border-color: #f5c6cb; }
+        .warning { color: #856404; background-color: #fff3cd; border-color: #ffeeba; }
+        .btn-regresar { display: inline-block; background-color: #6c757d; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: 600; transition: background-color 0.3s; }
+        .btn-regresar:hover { background-color: #5a6268; }
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4); }
+        .modal-content { background-color: #fefefe; margin: 10% auto; padding: 20px; border: 1px solid #888; width: 80%; max-width: 500px; border-radius: 8px; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #dee2e6; padding-bottom: 10px; }
+        .modal-header h2 { margin: 0; }
+        .close { color: #aaa; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 600; }
+        .form-group input { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ced4da; border-radius: 4px; }
+        .btn-submit { background-color: #28a745; color: white; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; }
     </style>
 </head>
 <body>
+    <header class="top-bar">
+        <nav class="breadcrumb">
+            <a href="{{ url_for('interface_admin' if usuario_rol == 'admin' else 'interface_aux') }}">Inicio</a>
+            <span>></span>
+            <span>Inventario</span>
+        </nav>
+        <img src="/static/sources/itislogo.png" alt="Logo" class="logo">
+    </header>
 
-    <div class="top-banner">
-        <div class="d-flex align-items-center breadcrumb-nav">
-            {% if usuario_rol == 'admin' or usuario_rol == 'jefe' or usuario_rol == '0' %}
-                <a href="{{ url_for('interface_admin') }}">Inicio Admin</a>
-            {% elif usuario_rol == 'auxiliar' or usuario_rol == '1' %}
-                <a href="{{ url_for('interface_aux') }}">Inicio Auxiliar</a>
-            {% else %}
-                <a href="{{ url_for('login') }}">Inicio</a>
-            {% endif %}
-            
-            <span>&gt;</span>
-            <span class="active-page">Inventario</span>
-        </div>
-        <img src="{{ url_for('static', filename='sources/itislogo.png') }}" alt="Logo Tecnológico Saltillo" class="logo-img">
-    </div>
-    <div class="flash-messages-container">
+    <div class="container">
+        <h1><i class="fas fa-boxes"></i> Gestión de Materiales</h1>
+
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category if category != 'message' else 'warning' }} alert-dismissible fade show" role="alert">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
+                {% for category, msg in messages %}
+                    <div class="flash {{ category }}">{{ msg }}</div>
                 {% endfor %}
             {% endif %}
         {% endwith %}
-    </div>
 
-    <h2 class="main-title mb-4">Gestión de Materiales</h2>
-    <div class="d-flex mb-4 align-items-center">
-        <button class="btn btn-principal action-button" data-bs-toggle="modal" data-bs-target="#agregarMaterialModal">Agregar material</button>
-        <button id="btnEliminar" class="btn btn-custom-danger action-button" disabled>Eliminar material</button>
-        <button id="btnModificar" class="btn btn-warning-custom action-button" data-bs-toggle="modal" data-bs-target="#modificarMaterialModal" disabled>Modificar material</button>
-        
-        <div class="input-group ms-auto" style="max-width: 300px;">
-            <input type="text" class="form-control" id="inputBusqueda" placeholder="Buscar material" aria-label="Buscar material">
-            <span class="input-group-text" id="searchIcon">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/></svg>
-            </span>
-        </div>
-    </div>
-
-    <div class="table-responsive">
-        <table class="table table-hover inventory-table">
-            <thead>
-                <tr>
-                    <th scope="col">ID</th>
-                    <th scope="col">Nombre</th>
-                    <th scope="col">Tipo</th>
-                    <th scope="col">Marca/modelo</th>
-                    <th scope="col">Cantidad</th>
-                    <th scope="col">Disponibles</th>
-                    <th scope="col">Estado</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for material in materiales %}
-                <tr data-id="{{ material.ID_MATERIAL }}" 
-                    data-nombre="{{ material.NOMBRE }}" 
-                    data-tipo="{{ material.TIPO }}"
-                    data-marca-modelo="{{ material.MARCA_MODELO }}"
-                    data-cantidad="{{ material.CANTIDAD }}"
-                    data-estado="{{ material.ESTATUS }}">
-                    <td>{{ material.ID_MATERIAL }}</td>
-                    <td>{{ material.NOMBRE }}</td>
-                    <td>{{ material.TIPO }}</td>
-                    <td>{{ material.MARCA_MODELO }}</td>
-                    <td>{{ material.CANTIDAD }}</td>
-                    <td>{{ material.CANTIDAD_DISPONIBLE }}</td>
-                    <td>
-                        {{ material.ESTATUS }}
-                        {% set status_class = 'disponible' if material.ESTATUS|upper == 'DISPONIBLE' else ('en-uso' if material.ESTATUS|upper == 'EN USO' else 'no-disponible') %}
-                        <span class="status-dot {{ status_class }}"></span>
-                    </td>
-                </tr>
-                {% endfor %}
-                {% if not materiales %}
-                <tr>
-                    <td colspan="7" class="text-center text-muted">No hay registros de materiales en el inventario.</td>
-                </tr>
-                {% endif %}
-            </tbody>
-        </table>
-    </div>
-
-    <div class="mt-5">
-        {% if usuario_rol == 'admin' or usuario_rol == 'jefe' or usuario_rol == '0' %}
-            <a href="{{ url_for('interface_admin') }}" class="btn btn-outline-secondary">
-        {% elif usuario_rol == 'auxiliar' or usuario_rol == '1' %}
-            <a href="{{ url_for('interface_aux') }}" class="btn btn-outline-secondary">
-        {% else %}
-            <a href="{{ url_for('login') }}" class="btn btn-outline-secondary">
-        {% endif %}
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-left" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z"/></svg>
-            Regresar
-        </a>
-    </div>
-    <div class="modal fade" id="agregarMaterialModal" tabindex="-1" aria-labelledby="agregarMaterialModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <form id="formAgregarMaterial" method="POST" action="{{ url_for('agregar_material') }}" novalidate>
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="agregarMaterialModalLabel">Agregar Nuevo Material</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <label for="addNombre" class="form-label">Nombre *</label>
-                            <input type="text" class="form-control" id="addNombre" name="nombre" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="addTipo" class="form-label">Tipo</label>
-                            <input type="text" class="form-control" id="addTipo" name="tipo">
-                        </div>
-                        <div class="mb-3">
-                            <label for="addMarcaModelo" class="form-label">Marca/Modelo</label>
-                            <input type="text" class="form-control" id="addMarcaModelo" name="marca_modelo">
-                        </div>
-                        <div class="mb-3">
-                            <label for="addCantidad" class="form-label">Cantidad *</label>
-                            <input type="number" class="form-control" id="addCantidad" name="cantidad" required min="1">
-                        </div>
-                        <small class="text-danger">* Campos obligatorios</small>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-principal">Guardar Material</button>
-                    </div>
-                </form>
+        <div class="toolbar">
+            <div class="actions">
+                <button onclick="openModal('agregarModal')"><i class="fas fa-plus"></i> Agregar material</button>
+            </div>
+            <div class="search-bar">
+                <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="Buscar por nombre...">
+                <button><i class="fas fa-search"></i></button>
             </div>
         </div>
+
+        <div class="table-container">
+            <table id="inventoryTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Tipo</th>
+                        <th>Marca/Modelo</th>
+                        <th>Total</th>
+                        <th>Disponibles</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for material in materiales %}
+                    <tr>
+                        <td>{{ material.ID_MATERIAL }}</td>
+                        <td>{{ material.NOMBRE }}</td>
+                        <td>{{ material.TIPO or 'N/A' }}</td>
+                        <td>{{ material.MARCA_MODELO or 'N/A' }}</td>
+                        <td>{{ material.CANTIDAD_TOTAL }}</td>
+                        <td>{{ material.CANTIDAD_DISPONIBLE }}</td>
+                        <td>
+                            {% if material.ESTATUS == 'Disponible' %}
+                                <span class="status-dot disponible"></span> Disponible
+                            {% elif material.ESTATUS == 'En uso' %}
+                                <span class="status-dot en-uso"></span> En uso ({{ material.CANTIDAD_EN_USO }})
+                            {% else %}
+                                <span class="status-dot sin-stock"></span> Sin stock
+                            {% endif %}
+                        </td>
+                        <td>
+                            <button class="edit" 
+                                    data-material='{{ material | tojson | safe }}'
+                                    onclick="openEditModal(this)">
+                                <i class="fas fa-pencil-alt"></i>
+                            </button>
+                            <form action="{{ url_for('eliminar_material') }}" method="POST" style="display:inline;">
+                                <input type="hidden" name="id_material" value="{{ material.ID_MATERIAL }}">
+                                <button type="submit" class="delete" onclick="return confirm('¿Estás seguro de que deseas eliminar este material?');"><i class="fas fa-trash-alt"></i></button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <br>
+        <a href="{{ url_for('interface_admin' if usuario_rol == 'admin' else 'interface_aux') }}" class="btn-regresar">Regresar</a>
     </div>
 
-    <div class="modal fade" id="modificarMaterialModal" tabindex="-1" aria-labelledby="modificarMaterialModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                 <form id="formModificarMaterial" method="POST" action="{{ url_for('modificar_material') }}" novalidate>
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="modificarMaterialModalLabel">Modificar Material</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <input type="hidden" id="modIDMaterial" name="id_material">
-                        
-                        <div class="mb-3">
-                            <label for="modNombre" class="form-label">Nombre *</label>
-                            <input type="text" class="form-control" id="modNombre" name="nombre" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="modTipo" class="form-label">Tipo</label>
-                            <input type="text" class="form-control" id="modTipo" name="tipo">
-                        </div>
-                        <div class="mb-3">
-                            <label for="modMarcaModelo" class="form-label">Marca/Modelo</label>
-                            <input type="text" class="form-control" id="modMarcaModelo" name="marca_modelo">
-                        </div>
-                        <div class="mb-3">
-                            <label for="modCantidad" class="form-label">Cantidad *</label>
-                            <input type="number" class="form-control" id="modCantidad" name="cantidad" required min="1">
-                        </div>
-                        <small class="text-danger">* Campos obligatorios</small>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-warning-custom">Guardar Cambios</button>
-                    </div>
-                </form>
+    <!-- Modal para Agregar Material -->
+    <div id="agregarModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Agregar Nuevo Material</h2>
+                <span class="close" onclick="closeModal('agregarModal')">&times;</span>
             </div>
+            <form action="{{ url_for('agregar_material') }}" method="POST">
+                <div class="form-group">
+                    <label for="nombre">Nombre del Material</label>
+                    <input type="text" id="nombre" name="nombre" required>
+                </div>
+                <div class="form-group">
+                    <label for="tipo">Tipo</label>
+                    <input type="text" id="tipo" name="tipo">
+                </div>
+                <div class="form-group">
+                    <label for="marca_modelo">Marca/Modelo</label>
+                    <input type="text" id="marca_modelo" name="marca_modelo">
+                </div>
+                <div class="form-group">
+                    <label for="cantidad">Cantidad Total</label>
+                    <input type="number" id="cantidad" name="cantidad" min="1" required>
+                </div>
+                <button type="submit" class="btn-submit">Guardar Material</button>
+            </form>
         </div>
     </div>
 
-    <div class="modal fade" id="eliminarMaterialModal" tabindex="-1" aria-labelledby="eliminarMaterialModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <form id="formEliminarMaterial" method="POST" action="{{ url_for('eliminar_material') }}">
-                    <div class="modal-header bg-custom-danger text-white">
-                        <h5 class="modal-title" id="eliminarMaterialModalLabel">Confirmar Eliminación</h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <input type="hidden" id="delIDMaterial" name="id_material">
-                        <p>¿Estás seguro de que deseas **eliminar** el material con ID: <strong id="delMaterialIDText"></strong> y nombre: <strong id="delMaterialNombreText"></strong>?</p>
-                        <p class="text-danger">¡Esta acción no se puede deshacer!</p>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-custom-danger">Eliminar</button>
-                    </div>
-                </form>
+    <!-- Modal para Editar Material -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Editar Material</h2>
+                <span class="close" onclick="closeModal('editModal')">&times;</span>
             </div>
+            <form action="{{ url_for('modificar_material') }}" method="POST">
+                <input type="hidden" id="edit_id_material" name="id_material">
+                <div class="form-group">
+                    <label for="edit_nombre">Nombre del Material</label>
+                    <input type="text" id="edit_nombre" name="nombre" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit_tipo">Tipo</label>
+                    <input type="text" id="edit_tipo" name="tipo">
+                </div>
+                <div class="form-group">
+                    <label for="edit_marca_modelo">Marca/Modelo</label>
+                    <input type="text" id="edit_marca_modelo" name="marca_modelo">
+                </div>
+                <div class="form-group">
+                    <label for="edit_cantidad">Cantidad Total</label>
+                    <input type="number" id="edit_cantidad" name="cantidad" min="0" required>
+                </div>
+                <button type="submit" class="btn-submit">Actualizar Material</button>
+            </form>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.7/dist/umd/popper.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
-    
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const table = document.querySelector('.inventory-table tbody');
-            const btnModificar = document.getElementById('btnModificar');
-            const btnEliminar = document.getElementById('btnEliminar');
-            const inputBusqueda = document.getElementById('inputBusqueda');
-            const searchIcon = document.getElementById('searchIcon');
-            let selectedRow = null;
-            
-            const eliminarModal = new bootstrap.Modal(document.getElementById('eliminarMaterialModal'));
+        // Se envuelven todas las funciones en un listener para asegurar que el DOM esté cargado
+        document.addEventListener('DOMContentLoaded', () => {
 
-            // 1. Manejo de la selección de fila
-            function updateSelectedRow(row) {
-                if (selectedRow) {
-                    selectedRow.classList.remove('selected');
-                }
-
-                if (selectedRow === row) {
-                    selectedRow = null; // Deseleccionar
-                } else {
-                    row.classList.add('selected');
-                    selectedRow = row;
-                }
-
-                // Habilitar/Deshabilitar botones
-                const isRowSelected = selectedRow !== null;
-                btnModificar.disabled = !isRowSelected;
-                btnEliminar.disabled = !isRowSelected;
-            }
-
-            table.addEventListener('click', function(event) {
-                let row = event.target.closest('tr');
-                if (!row || !row.dataset.id) return; 
-                updateSelectedRow(row);
+            // Nueva funcionalidad para ocultar los mensajes flash
+            const flashMessages = document.querySelectorAll('.flash');
+            flashMessages.forEach(function(message) {
+                setTimeout(function() {
+                    message.style.opacity = '0';
+                    // Espera a que termine la transición de fade-out para ocultarlo
+                    setTimeout(function() {
+                        message.style.display = 'none';
+                    }, 500); // Coincide con la duración de la transición en CSS
+                }, 30000); // 30000 milisegundos = 30 segundos
             });
 
-            // 2. Lógica para poblar el Modal de Modificar
-            const modificarMaterialModal = document.getElementById('modificarMaterialModal');
-            modificarMaterialModal.addEventListener('show.bs.modal', function (event) {
-                if (!selectedRow) {
-                    event.preventDefault(); 
-                    return; 
-                }
-                
-                // Obtener datos de la fila seleccionada
-                const id = selectedRow.dataset.id;
-                const nombre = selectedRow.dataset.nombre;
-                const tipo = selectedRow.dataset.tipo;
-                const marcaModelo = selectedRow.dataset.marcaModelo;
-                const cantidad = selectedRow.dataset.cantidad;
-
-                // Llenar el formulario del modal
-                document.getElementById('modIDMaterial').value = id;
-                document.getElementById('modNombre').value = nombre;
-                document.getElementById('modTipo').value = tipo;
-                document.getElementById('modMarcaModelo').value = marcaModelo;
-                document.getElementById('modCantidad').value = cantidad;
-            });
-            
-            // 3. Lógica del Botón Eliminar (Abre el modal de confirmación)
-            btnEliminar.addEventListener('click', function() {
-                if (selectedRow) {
-                    const id = selectedRow.dataset.id;
-                    const nombre = selectedRow.dataset.nombre;
-                    
-                    // Llenar el modal de eliminación
-                    document.getElementById('delIDMaterial').value = id;
-                    document.getElementById('delMaterialIDText').textContent = id;
-                    document.getElementById('delMaterialNombreText').textContent = nombre;
-
-                    eliminarModal.show(); 
-                }
-            });
-
-            // 4. Lógica de Búsqueda (Filtro en tiempo real)
-            inputBusqueda.addEventListener('keyup', function() {
-                const filter = inputBusqueda.value.toUpperCase();
-                const rows = table.querySelectorAll('tr');
-
-                rows.forEach(row => {
-                    let textContent = row.textContent || row.innerText;
-                    
-                    if (textContent.toUpperCase().indexOf(filter) > -1) {
-                        row.style.display = ""; // Mostrar fila
-                    } else {
-                        row.style.display = "none"; // Ocultar fila
-                    }
-                    
-                    // Si la fila seleccionada se oculta, deseleccionarla
-                    if (row.style.display === "none" && row === selectedRow) {
-                        updateSelectedRow(row); 
-                    }
-                });
-            });
-            
-            // 🔍 Al hacer clic en el ícono de lupa, enfoca el campo de texto.
-            searchIcon.addEventListener('click', function() {
-                inputBusqueda.focus(); 
-            });
-
-            // 5. Lógica de Validación (Frontend)
-            const forms = document.querySelectorAll('form');
-            forms.forEach(form => {
-                form.addEventListener('submit', function(event) {
-                    if (form.checkValidity() === false) {
-                        event.preventDefault();
-                        event.stopPropagation();
-                    }
-                    form.classList.add('was-validated');
-                }, false);
-            });
         });
+
+        function filterTable() {
+            let input, filter, table, tr, td, i, txtValue;
+            input = document.getElementById("searchInput");
+            filter = input.value.toUpperCase();
+            table = document.getElementById("inventoryTable");
+            tr = table.getElementsByTagName("tr");
+            for (i = 1; i < tr.length; i++) {
+                td = tr[i].getElementsByTagName("td")[1];
+                if (td) {
+                    txtValue = td.textContent || td.innerText;
+                    if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                        tr[i].style.display = "";
+                    } else {
+                        tr[i].style.display = "none";
+                    }
+                }
+            }
+        }
+
+        function openModal(modalId) {
+            document.getElementById(modalId).style.display = "block";
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = "none";
+        }
+
+        function openEditModal(button) {
+            const materialJson = button.getAttribute('data-material');
+            const material = JSON.parse(materialJson);
+
+            document.getElementById('edit_id_material').value = material.ID_MATERIAL;
+            document.getElementById('edit_nombre').value = material.NOMBRE;
+            document.getElementById('edit_tipo').value = material.TIPO || '';
+            document.getElementById('edit_marca_modelo').value = material.MARCA_MODELO || '';
+            document.getElementById('edit_cantidad').value = material.CANTIDAD_TOTAL;
+            
+            openModal('editModal');
+        }
+
+        window.onclick = function(event) {
+            const modals = document.getElementsByClassName('modal');
+            for (let i = 0; i < modals.length; i++) {
+                if (event.target == modals[i]) {
+                    modals[i].style.display = "none";
+                }
+            }
+        }
     </script>
 </body>
 </html>
+

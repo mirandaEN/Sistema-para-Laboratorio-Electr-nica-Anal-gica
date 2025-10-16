@@ -23,7 +23,7 @@
                     <li><a href="{{ url_for('interface_admin') }}">Inicio</a></li>
                     <li><a href="{{ url_for('prestamos') }}">Prestamos</a></li>
                     <li><a href="{{ url_for('inventario') }}">Inventario</a></li>
-                    <li><a href="#">Generar reportes</a></li>
+                    <li><a href="{{ url_for('reportes') }}">Generar reportes</a></li>
                     <li><a href="#">Gestión de auxiliares</a></li>
                     <!-- ❌ ELIMINADO de aquí: El botón se mueve al final del cuerpo -->
                 </ul>
@@ -62,7 +62,7 @@
             <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. 
                 Error quae, voluptatibus rem officia distinctio soluta 
             </p>
-            <a href="#" class="btn-1">IR</a>
+            <a href="{{ url_for('reportes') }}" class="btn-1">IR</a>
         </div>
         <div class="box">
             <img class="gestion" src="/static/sources/gestion-aux.png" alt="">

@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Reportes</title>
+    <!-- Font Awesome para los iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; color: #333; }
+        .container { max-width: 1200px; margin: auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .header h1 { margin: 0; color: #2c3e50; }
+        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .kpi-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.05); display: flex; align-items: center; }
+        .kpi-card .icon { font-size: 2.5em; color: #3498db; margin-right: 20px; width: 60px; text-align: center; }
+        .kpi-card .info h3 { margin: 0; font-size: 1em; color: #555; }
+        .kpi-card .info p { margin: 5px 0 0; font-size: 2em; font-weight: 700; color: #2c3e50; }
+        .report-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+        .report-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.05); }
+        .report-card h3 { margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px; font-size: 1.2em; color: #34495e; }
+        .chart-container { position: relative; height: 300px; }
+        .list { list-style: none; padding: 0; margin: 0; }
+        .list-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f0f0f0; }
+        .list-item:last-child { border-bottom: none; }
+        .list-item .name { font-weight: 600; }
+        .list-item .count { background: #eaf2f8; color: #3498db; padding: 3px 8px; border-radius: 12px; font-size: 0.9em; font-weight: bold; }
+        .incident-list .minimal-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .incident-list .minimal-table th, .incident-list .minimal-table td { text-align: left; padding: 8px; border-bottom: 1px solid #eee; }
+        .incident-list .minimal-table th { font-weight: 600; color: #555; }
+        .incident-list .incident-count { background-color: #d9534f; color: white; padding: 3px 8px; border-radius: 50%; font-weight: bold; }
+    </style>
+    <!-- Chart.js para los gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-chart-line"></i> Dashboard de Reportes del Día</h1>
+        </div>
+        
+        <!-- Tarjetas de KPIs -->
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <div class="icon"><i class="fas fa-exchange-alt"></i></div>
+                <div class="info">
+                    <h3>Préstamos Totales Hoy</h3>
+                    <p>{{ datos.total_prestamos_hoy or 0 }}</p>
+                </div>
+            </div>
+            <div class="kpi-card">
+                <div class="icon"><i class="fas fa-boxes"></i></div>
+                <div class="info">
+                    <h3>Total de Items en Stock</h3>
+                    <p>{{ datos.total_stock or 0 }}</p>
+                </div>
+            </div>
+            <div class="kpi-card">
+                <div class="icon"><i class="fas fa-users"></i></div>
+                <div class="info">
+                    <h3>Inicios de Sesión (Auxiliares)</h3>
+                    <p>{{ datos.auxiliares_activos or 0 }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="report-grid">
+            <!-- Gráfico de Barras Principal -->
+            <div class="report-card">
+                <h3><i class="fas fa-user-clock"></i> Actividad de Préstamos por Auxiliar (Hoy)</h3>
+                <div class="chart-container">
+                    <canvas id="graficoTurnos"></canvas>
+                </div>
+            </div>
+
+            <!-- Gráfico de Dona -->
+            <div class="report-card">
+                <h3><i class="fas fa-star"></i> Top 5 Materiales Prestados Hoy</h3>
+                <div class="chart-container">
+                    <canvas id="graficoTopMateriales"></canvas>
+                </div>
+            </div>
+
+            <!-- Incidentes y Bajo Stock -->
+            <div class="report-card">
+                <h3><i class="fas fa-exclamation-triangle"></i> Incidentes de Cierre de Sesión</h3>
+                <div class="incident-list">
+                    {% if datos.incidentes_cierre_sesion %}
+                        <table class="minimal-table">
+                            <thead><tr><th>Auxiliar</th><th>Préstamos Pendientes</th><th>Hora</th></tr></thead>
+                            <tbody>
+                                {% for incidente in datos.incidentes_cierre_sesion %}
+                                    <tr>
+                                        <td>{{ incidente.USUARIO }}</td>
+                                        <td><span class="incident-count">{{ incidente.PRESTAMOS_PENDIENTES }}</span></td>
+                                        <td>{{ incidente.FECHA_HORA.strftime('%H:%M:%S') }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <p>No se han registrado incidentes hoy.</p>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="report-card">
+                <h3><i class="fas fa-battery-quarter"></i> Materiales con Bajo Stock (5 o menos)</h3>
+                <ul class="list">
+                    {% if datos.materiales_bajo_stock %}
+                        {% for material in datos.materiales_bajo_stock %}
+                            <li class="list-item">
+                                <span class="name">{{ material.NOMBRE }}</span>
+                                <span class="count">{{ material.CANTIDAD_DISPONIBLE }}</span>
+                            </li>
+                        {% endfor %}
+                    {% else %}
+                        <p>No hay materiales con bajo stock.</p>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contenedor de datos oculto para pasar datos de Flask a JavaScript de forma segura -->
+    <div id="chart-data" 
+         data-turnos='{{ datos.prestamos_por_turno | tojson | safe }}'
+         data-top-materiales='{{ datos.top_materiales_hoy | tojson | safe }}'
+         style="display: none;">
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const dataContainer = document.getElementById('chart-data');
+
+            // 1. Gráfico de Barras Apiladas: Préstamos por Turno
+            try {
+                const ctxTurnos = document.getElementById('graficoTurnos').getContext('2d');
+                const datosTurnos = JSON.parse(dataContainer.dataset.turnos || '[]')
+                
+                if (datosTurnos.length > 0) {
+                    const labels = datosTurnos.map(d => d.USUARIO);
+                    const devueltosData = datosTurnos.map(d => (d.PRESTAMOS_EN_TURNO || 0) - (d.PRESTAMOS_PENDIENTES || 0));
+                    const pendientesData = datosTurnos.map(d => d.PRESTAMOS_PENDIENTES || 0);
+
+                    new Chart(ctxTurnos, {
+                        type: 'bar',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Préstamos Devueltos Hoy',
+                                data: devueltosData,
+                                backgroundColor: 'rgba(54, 162, 235, 0.7)', // Azul
+                            }, {
+                                label: 'Préstamos Pendientes Hoy',
+                                data: pendientesData,
+                                backgroundColor: 'rgba(255, 99, 132, 0.7)', // Rojo
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: { legend: { position: 'top' } },
+                            scales: {
+                                x: { stacked: true },
+                                y: { stacked: true, beginAtZero: true, ticks: { stepSize: 1 } }
+                            }
+                        }
+                    });
+                }
+            } catch (e) {
+                console.error("Error al renderizar el gráfico de turnos:", e);
+            }
+
+            // 2. Gráfico de Dona: Top 5 Materiales
+            try {
+                const ctxTopMateriales = document.getElementById('graficoTopMateriales').getContext('2d');
+                const datosTopMateriales = JSON.parse(dataContainer.dataset.topMateriales || '[]');
+                
+                if (datosTopMateriales.length > 0) {
+                    const labels = datosTopMateriales.map(d => d.NOMBRE);
+                    const data = datosTopMateriales.map(d => d.TOTAL);
+                    const backgroundColors = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'];
+                    
+                    new Chart(ctxTopMateriales, {
+                        type: 'doughnut',
+                        data: {
+                            labels: labels,
+                            datasets: [{ data: data, backgroundColor: backgroundColors.slice(0, data.length) }]
+                        },
+                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } } }
+                    });
+                }
+            } catch (e) {
+                console.error("Error al renderizar el gráfico de top materiales:", e);
+            }
+        });
+    </script>
+</body>
+</html>
