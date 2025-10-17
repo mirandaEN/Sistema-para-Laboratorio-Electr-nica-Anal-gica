@@ -24,7 +24,8 @@
                     <li><a href="{{ url_for('prestamos') }}">Prestamos</a></li>
                     <li><a href="{{ url_for('inventario') }}">Inventario</a></li>
                     <li><a href="{{ url_for('reportes') }}">Generar reportes</a></li>
-                    <li><a href="#">Gestión de auxiliares</a></li>
+                    <li><a href="{{ url_for('gestion_auxiliares') }}">Gestión de auxiliares</a></li>
+                    <li><a href="{{ url_for('gestion_danos') }}">Daños</a></li>
                     <!-- ❌ ELIMINADO de aquí: El botón se mueve al final del cuerpo -->
                 </ul>
             </nav>
@@ -34,7 +35,7 @@
                 <h1>Laboratorio de Electrónica / Analógica</h1>
                 <p>Bienvenido Administrador 💻</p>
                 <!-- 🔗 Botón Contacto -->
-                <a href="#" class="btn-1">Contacto</a>
+                <a href="{{ url_for('soporte') }}" class="btn-1">Contacto</a>
             </div>
             <img class="banner" src="/static/sources/itislogo.png" alt="">
             </div>
@@ -43,34 +44,42 @@
         <div class="box">
             <img src="/static/sources/prestamos.png" alt="">
             <h3>Prestamos</h3>
-            <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. 
-                Error quae, voluptatibus rem officia distinctio soluta 
-            </p>
+            <div class="description-content"> <!-- ESTA LÍNEA ES CRUCIAL -->
+                <p>Este módulo permite registrar, modificar y controlar el flujo de entrada y salida de todo el material solicitado por los alumnos.</p>
+            </div>
             <a href="{{ url_for('prestamos') }}" class="btn-1">IR</a>
         </div>
         <div class="box">
             <img src="/static/sources/inventario.png" alt="">
             <h3>Inventario</h3>
-            <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. 
-                Error quae, voluptatibus rem officia distinctio soluta 
-            </p>
+            <div class="description-content"> <!-- ESTA LÍNEA ES CRUCIAL -->
+                <p>Accede al inventario central para dar de alta, modificar y eliminar materiales. Controla el stock total, disponible y dañado.</p>
+            </div>
             <a href="{{ url_for('inventario') }}" class="btn-1">IR</a>
         </div>
         <div class="box">
             <img src="/static/sources/reportes.png" alt="">
             <h3>Reportes</h3>
-            <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. 
-                Error quae, voluptatibus rem officia distinctio soluta 
-            </p>
+            <div class="description-content"> <!-- ESTA LÍNEA ES CRUCIAL -->
+                <p>Muestra el panel de control con estadísticas de uso de material, actividad auxiliar, y los principales materiales solicitados y dañados.</p>
+            </div>
             <a href="{{ url_for('reportes') }}" class="btn-1">IR</a>
         </div>
         <div class="box">
             <img class="gestion" src="/static/sources/gestion-aux.png" alt="">
             <h3>Gestión de Auxiliares</h3>
-            <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. 
-                Error quae, voluptatibus rem officia distinctio soluta 
-            </p>
-            <a href="#" class="btn-1">IR</a>
+            <div class="description-content"> <!-- ESTA LÍNEA ES CRUCIAL -->
+                <p>Administra las cuentas de los auxiliares de laboratorio. Puedes crear nuevos usuarios y gestionar el acceso y los permisos de inicio de sesión.</p>
+            </div>
+            <a href="{{ url_for('gestion_auxiliares') }}" class="btn-1">IR</a>
+        </div>
+        <div class="box">
+            <img class="daño" src="/static/sources/chat_8532893.png" alt="">
+            <h3>Daños</h3>
+            <div class="description-content"> <!-- ESTA LÍNEA ES CRUCIAL -->
+                <p>Gestiona los registros de material dañado o extraviado. Permite marcar la reposición por parte del alumno para actualizar el inventario total.</p>
+            </div>
+            <a href="{{ url_for('gestion_danos') }}" class="btn-1">IR</a>
         </div>
     </main>
 

@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Auxiliares - Laboratorio</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: #f4f7f6; color: #333; margin: 0; padding: 0; }
+        .flash-messages { position: fixed; top: 20px; right: 20px; z-index: 1050; width: 320px; }
+        .alert { padding: 15px; margin-bottom: 10px; border-radius: 5px; color: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.2); animation: fadeIn 0.5s, fadeOut 0.5s 4.5s forwards; }
+        .alert-success { background-color: #28a745; }
+        .alert-danger { background-color: #dc3545; }
+        .alert-warning { background-color: #ffc107; color: #212529;}
+        @keyframes fadeIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; visibility: hidden; } }
+        .top-banner { background-color: #9c0000; color: white; padding: 15px 30px; display: flex; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .logo { height: 50px; margin-right: 20px; }
+        .banner-text h1 { margin: 0; font-size: 1.5em; font-weight: 500; }
+        .banner-text h2 { margin: 0; font-size: 1.1em; font-weight: 300; opacity: 0.9; }
+        .main-container { max-width: 1200px; margin: 30px auto; padding: 0 20px; }
+        .grid-container { display: grid; grid-template-columns: 2fr 1fr; gap: 30px; }
+        .card { background-color: #fff; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.07); padding: 30px; }
+        .card h3 { margin-top: 0; font-size: 1.4em; color: #005a9c; border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #dee2e6; }
+        th { font-weight: 600; color: #495057; }
+        .actions { display: flex; gap: 10px; }
+        .btn { padding: 8px 12px; border: none; border-radius: 5px; cursor: pointer; text-decoration: none; color: white; font-size: 0.9em; transition: background-color 0.2s; }
+        .btn-edit { background-color: #ffc107; } .btn-edit:hover { background-color: #e0a800; }
+        .btn-delete { background-color: #dc3545; } .btn-delete:hover { background-color: #c82333; }
+        .btn-reset { background-color: #c82333; } .btn-reset:hover { background-color: #a71d2a; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: 500; }
+        input[type="text"], input[type="password"] { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
+        .btn-submit { background-color: #04458b; width: 100%; padding: 12px; font-size: 1em; } .btn-submit:hover { background-color: #0069d9; }
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); animation: fadeInModal 0.3s; }
+        .modal-content { background-color: #fefefe; margin: 15% auto; padding: 30px; border: 1px solid #888; width: 80%; max-width: 500px; border-radius: 8px; }
+        .close-btn { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .back-link-container { text-align: center; margin-top: 30px; }
+        .back-link { background-color: #6c757d; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none; } .back-link:hover { background-color: #5a6268; }
+        @keyframes fadeInModal { from { opacity: 0; } to { opacity: 1; } }
+        @media (max-width: 992px) { .grid-container { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+
+    <div class="flash-messages">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <div class="top-banner">
+        <img src="{{ url_for('static', filename='sources/itislogo.png') }}" alt="Logo TecNM" class="logo">
+        <div class="banner-text">
+            <h1>Instituto Tecnológico de Saltillo</h1>
+            <h2>Panel de Administración</h2>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <div class="grid-container">
+            <div class="card">
+                <h3>Lista de Auxiliares</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nombre de Usuario</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for aux in auxiliares %}
+                        <tr>
+                            <td>{{ aux.ID }}</td>
+                            <td>{{ aux.USUARIO }}</td>
+                            <td class="actions">
+                                <button class="btn btn-edit" onclick="openEditModal('{{ aux.ID }}', '{{ aux.USUARIO }}')">Editar</button>
+                                <form action="{{ url_for('eliminar_auxiliar') }}" method="POST" onsubmit="return confirm('¿Estás seguro de que quieres eliminar a este auxiliar? Esta acción no se puede deshacer.');">
+                                    <input type="hidden" name="id_usuario" value="{{ aux.ID }}">
+                                    <button type="submit" class="btn btn-delete">Eliminar</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="3" style="text-align: center;">No hay auxiliares registrados.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <div>
+                <div class="card">
+                    <h3>Agregar Nuevo Auxiliar</h3>
+                    <form action="{{ url_for('agregar_auxiliar') }}" method="POST">
+                        <div class="form-group">
+                            <label for="usuario">Nombre de Usuario</label>
+                            <input type="text" id="usuario" name="usuario" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="contrasena">Contraseña</label>
+                            <input type="password" id="contrasena" name="contrasena" required>
+                        </div>
+                        <button type="submit" class="btn btn-submit">Agregar Auxiliar</button>
+                    </form>
+                </div>
+                <!-- NUEVO: Sección de Mantenimiento del Sistema -->
+                <div class="card" style="margin-top: 30px;">
+                    <h3>Mantenimiento del Sistema</h3>
+                    <p>Esta acción eliminará permanentemente todos los registros de préstamos, daños y actividad. El inventario se restaurará a su estado inicial. Esta acción es irreversible.</p>
+                    <button class="btn btn-reset" style="width: 100%;" onclick="openResetModal()">Reiniciar Registros del Semestre</button>
+                </div>
+            </div>
+        </div>
+        <div class="back-link-container">
+            <a href="{{ url_for('interface_admin') }}" class="back-link">Volver al Panel Principal</a>
+        </div>
+    </div>
+
+    <!-- Modal para Editar Auxiliar -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeEditModal()">&times;</span>
+            <h3>Editar Auxiliar</h3>
+            <form action="{{ url_for('modificar_auxiliar') }}" method="POST">
+                <input type="hidden" id="edit-id-usuario" name="id_usuario">
+                <div class="form-group">
+                    <label for="edit-usuario">Nombre de Usuario</label>
+                    <input type="text" id="edit-usuario" name="usuario" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-contrasena">Nueva Contraseña (opcional)</label>
+                    <input type="password" id="edit-contrasena" name="contrasena" placeholder="Dejar en blanco para no cambiar">
+                </div>
+                <button type="submit" class="btn btn-submit">Guardar Cambios</button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- NUEVO: Modal para Reiniciar Sistema -->
+    <div id="resetModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeResetModal()">&times;</span>
+            <h3>Confirmar Reinicio del Sistema</h3>
+            <p>Esta acción es <strong>irreversible</strong> y eliminará todos los préstamos, detalles de préstamos, registros de daños y registros de actividad. Para confirmar, por favor escribe <strong>REINICIAR</strong> en el campo de abajo.</p>
+            <form action="{{ url_for('reiniciar_sistema') }}" method="POST">
+                <div class="form-group">
+                    <label for="confirmacion">Palabra de confirmación</label>
+                    <input type="text" id="confirmacion" name="confirmacion" onkeyup="validateReset()">
+                </div>
+                <button type="submit" id="reset-confirm-btn" class="btn btn-reset" style="width: 100%;" disabled>Confirmar Reinicio</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const editModal = document.getElementById('editModal');
+        const resetModal = document.getElementById('resetModal');
+
+        function openEditModal(id, usuario) {
+            document.getElementById('edit-id-usuario').value = id;
+            document.getElementById('edit-usuario').value = usuario;
+            editModal.style.display = "block";
+        }
+        function closeEditModal() {
+            editModal.style.display = "none";
+        }
+        function openResetModal() {
+            resetModal.style.display = "block";
+        }
+        function closeResetModal() {
+            resetModal.style.display = "none";
+            document.getElementById('confirmacion').value = '';
+            document.getElementById('reset-confirm-btn').disabled = true;
+        }
+        function validateReset() {
+            const input = document.getElementById('confirmacion');
+            const btn = document.getElementById('reset-confirm-btn');
+            btn.disabled = input.value !== 'REINICIAR';
+        }
+        window.onclick = function(event) {
+            if (event.target == editModal) closeEditModal();
+            if (event.target == resetModal) closeResetModal();
+        }
+    </script>
+</body>
+</html>

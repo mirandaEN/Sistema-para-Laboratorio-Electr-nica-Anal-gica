@@ -43,8 +43,8 @@ header {
 }
 
 .menu .logo{
-    font-weight: 700;
-    font-size: 25px;
+    font-weight: 670;
+    font-size: 20px;
     color: rgb(67, 67, 67);
 
 }
@@ -91,7 +91,7 @@ header {
 }
 
 .content h1{
-    color: rgb(85, 0, 0);
+    color: rgb(24, 80, 143);
     font-size: 55px;
     text-transform: uppercase;
     font-weight: 500;
@@ -158,29 +158,47 @@ header {
     justify-content: space-between;
     text-align: center;
 }
-.box{
+.box {
     padding: 25px;
     margin: 0px 10px;
     box-shadow: 0px 0px 20px rgba(163, 163, 163, 0.3);
     margin-top: 30px;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    align-items: center; /* <-- CAMBIO: Centra horizontalmente todo el contenido */
+    text-align: center;  /* <-- CAMBIO: Asegura que el texto (h3) también se centre */
 }
 
-.box img{
+.description-content {
+    flex: 1; 
+}
+
+.box img {
     margin-top: -50px;
     width: 80px;
+    /* Se quitó 'align-items' de aquí porque ahora lo controla el .box */
 }
-.box h3{
+
+.box h3 {
     font-size: 20px;
     font-weight: 600;
     color: rgb(85, 0, 0);
     margin-bottom: 10px;
 }
-.box p{
+
+.box p {
     color: #525254;
     font-size: 16px;
     padding-top: 25px;
-    text-align: justify;
+    text-align: justify; /* Mantenemos el párrafo justificado para mejor lectura */
 }
-.box .gestion{
+
+.box .gestion {
     width: 50px;
+}
+
+.box .daño {
+    width: 50px;
+    /* Se quitó 'align-items' de aquí también */
 }

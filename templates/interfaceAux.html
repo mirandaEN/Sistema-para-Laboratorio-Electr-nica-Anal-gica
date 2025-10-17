@@ -23,8 +23,7 @@
                     <li><a href="{{ url_for('interface_aux') }}">Inicio</a></li>
                     <li><a href="{{ url_for('prestamos') }}">Prestamos</a></li>
                     <li><a href="{{ url_for('inventario') }}">Inventario</a></li>
-                    <li><a href="#">Generar reportes</a></li>
-                    <li><a href="#">Gestión de auxiliares</a></li>
+                    <li><a href="{{ url_for('gestion_danos') }}">Daños</a></li>
                 </ul>
             </nav>
         </div>
@@ -32,7 +31,7 @@
             <div class="content">
                 <h1>Laboratorio de Electrónica / Analógica</h1>
                 <p>Bienvenido Auxiliar ⚙️</p>
-                <a href="#" class="btn-1">Contacto</a>
+                <a href="{{ url_for('soporte') }}" class="btn-1">Contacto</a>
             </div>
             <img class="banner" src="/static/sources/itislogo.png" alt="">
             </div>
@@ -41,18 +40,24 @@
         <div class="box">
             <img src="/static/sources/prestamos.png" alt="">
             <h3>Prestamos</h3>
-            <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. 
-                Error quae, voluptatibus rem officia distinctio soluta 
+            <p>Este módulo permite registrar, modificar y controlar el flujo de entrada y salida de todo el material solicitado por los alumnos.
             </p>
             <a href="{{ url_for('prestamos') }}" class="btn-1">IR</a>
         </div>
         <div class="box">
             <img src="/static/sources/inventario.png" alt="">
             <h3>Inventario</h3>
-            <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. 
-                Error quae, voluptatibus rem officia distinctio soluta 
+            <p>Accede al inventario central para dar de alta, modificar y eliminar materiales. Controla el stock total, disponible y dañado.
             </p>
             <a href="{{ url_for('inventario') }}" class="btn-1">IR</a>
+        </div>
+        <div class="box">
+            <img class="daño" src="/static/sources/chat_8532893.png" alt="">
+            <h3>Daños</h3>
+            <div class="description-content"> <!-- ESTA LÍNEA ES CRUCIAL -->
+                <p>Gestiona los registros de material dañado o extraviado. Permite marcar la reposición por parte del alumno para actualizar el inventario total.</p>
+            </div>
+            <a href="{{ url_for('gestion_danos') }}" class="btn-1">IR</a>
         </div>
     </main>
     <div class="logout-fixed">

@@ -5,18 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Préstamos - Laboratorio</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        /* Paleta de Colores */
         :root {
-            --color-principal: #660000;
-            --color-secundario: #c4c4c4;
+            --color-principal: #7d0015; /* Vino Tinto */
+            --color-secundario: #a71d2a; /* Rojo un poco más claro */
             --color-texto-claro: white;
-            --color-activo: #28a745;
-            --color-devuelto: #6c757d;
+            --color-activo: #28a745; /* Verde */
+            --color-devuelto: #6c757d; /* Gris */
+            --color-fondo: #f7f9fc;
         }
         body {
             font-family: Arial, sans-serif;
             padding: 20px;
-            background-color: #f7f9fc;
+            background-color: var(--color-fondo);
         }
         .top-banner {
             background-color: var(--color-principal);
@@ -30,17 +33,18 @@
         }
         .logo-img { max-height: 50px; }
         .breadcrumb-nav a {
-            color: var(--color-secundario);
+            color: #dee2e6;
             text-decoration: none;
             padding: 5px;
             border-radius: 5px;
+            transition: color 0.2s, background-color 0.2s;
         }
         .breadcrumb-nav a:hover {
             color: var(--color-texto-claro);
             background-color: rgba(255, 255, 255, 0.1);
         }
         .breadcrumb-nav span {
-            color: var(--color-secundario);
+            color: #dee2e6;
             margin: 0 5px;
         }
         .breadcrumb-nav .active-page {
@@ -49,12 +53,16 @@
         }
         .main-title {
             font-weight: 700;
-            color: var(--color-principal);
+            color: rgb(24, 80, 143);
         }
         .btn-principal {
             background-color: var(--color-principal) !important; 
             border-color: var(--color-principal) !important;
             color: var(--color-texto-claro) !important;
+            transition: background-color 0.2s;
+        }
+        .btn-principal:hover {
+            background-color: var(--color-secundario) !important;
         }
         .card-section {
             background-color: white;
@@ -63,6 +71,7 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.05);
             height: 100%;
         }
+        /* Estilos para la lista de materiales seleccionados */
         #listaMaterialSeleccionado li {
             display: flex;
             justify-content: space-between;
@@ -89,20 +98,30 @@
         .status-badge.activo { background-color: var(--color-activo); }
         .status-badge.devuelto { background-color: var(--color-devuelto); }
         
-        /* --- [NUEVO] Estilo para los mensajes flash --- */
         .flash-messages-container {
             position: fixed;
-            top: 80px; /* Ajustado para estar debajo del banner */
+            top: 80px; 
             right: 20px;
             z-index: 1050;
             width: 350px;
         }
+
+        /* Estilos para modales de Reporte de Daño */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4); }
+        .modal-content { background-color: #fefefe; margin: 10% auto; padding: 20px; border: 1px solid #888; width: 80%; max-width: 500px; border-radius: 8px; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #dee2e6; padding-bottom: 10px; }
+        .modal-header h2 { margin: 0; }
+        .close { color: #aaa; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 600; }
+        .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ced4da; border-radius: 4px; }
     </style>
 </head>
 <body>
 
     <div class="top-banner">
         <div class="d-flex align-items-center breadcrumb-nav">
+            <!-- Lógica de Regreso Condicional -->
             {% if usuario_rol == 'admin' or usuario_rol == 'jefe' or usuario_rol == '0' %}
                 <a href="{{ url_for('interface_admin') }}">Inicio Admin</a>
             {% elif usuario_rol == 'auxiliar' or usuario_rol == '1' %}
@@ -110,13 +129,13 @@
             {% else %}
                 <a href="{{ url_for('login') }}">Inicio</a>
             {% endif %}
-            <span>&gt;</span>
+            <span>></span>
             <span class="active-page">Préstamos</span>
         </div>
         <img src="{{ url_for('static', filename='sources/itislogo.png') }}" alt="Logo Tecnológico Saltillo" class="logo-img">
     </div>
 
-    <!-- --- [NUEVO] Contenedor para mostrar mensajes flash --- -->
+    <!-- Contenedor para mostrar mensajes flash -->
     <div class="flash-messages-container">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
@@ -135,7 +154,7 @@
     <div class="row g-4">
         <div class="col-lg-5">
             <div class="card-section">
-                <h5><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-file-earmark-plus" viewBox="0 0 16 16"><path d="M8 6.5a.5.5 0 0 1 .5.5v1.5H10a.5.5 0 0 1 0 1H8.5V11a.5.5 0 0 1-1 0V9.5H6a.5.5 0 0 1 0-1h1.5V7a.5.5 0 0 1 .5-.5z"/><path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5L14 4.5zm-3 0A1.5 1.5 0 0 1 9.5 3V1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V4.5h-2z"/></svg> Nuevo Préstamo</h5>
+                <h5><i class="fas fa-file-invoice"></i> Nuevo Préstamo</h5>
                 <hr>
                 <form id="formNuevoPrestamo" method="POST" action="{{ url_for('registrar_prestamo') }}">
                     <input type="hidden" name="materiales_seleccionados" id="materialesSeleccionadosInput">
@@ -198,11 +217,11 @@
 
         <div class="col-lg-7">
             <div class="card-section">
-                <h5><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-box-seam" viewBox="0 0 16 16"><path d="M8.186 1.113a.5.5 0 0 0-.372 0L1.846 3.5l2.404.961L10.404 2l-2.218-.887zm3.564 1.426L5.596 5 8 5.961 14.154 3.5l-2.404-.961zm3.25 1.7-6.5 2.6v7.922l6.5-2.6V4.24zM7.5 14.762V6.838L1 4.239v7.923l6.5 2.6zM7.443.184a1.5 1.5 0 0 1 1.114 0l7.129 2.852A.5.5 0 0 1 16 3.5v8.662a1 1 0 0 1-.629.928l-7.185 2.874a.5.5 0 0 1-.372 0L.63 13.09a1 1 0 0 1-.63-.928V3.5a.5.5 0 0 1 .314-.464L7.443.184z"/></svg> Material Disponible</h5>
+                <h5><i class="fas fa-boxes"></i> Material Disponible</h5>
                 <hr>
                 <div class="input-group mb-3">
                     <input type="text" id="busquedaMaterial" class="form-control" placeholder="Buscar material por nombre o tipo...">
-                    <span class="input-group-text"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/></svg></span>
+                    <span class="input-group-text"><i class="fas fa-search"></i></span>
                 </div>
                 <div class="materials-table-container">
                     <table class="table table-hover">
@@ -214,13 +233,19 @@
                             </tr>
                         </thead>
                         <tbody id="tablaMaterialesBody">
+                            <!-- 🔑 CORRECCIÓN APLICADA AQUÍ: Se asegura el uso de nombres en MAYÚSCULAS -->
                             {% for material in materiales_disponibles %}
                             <tr data-id="{{ material.ID_MATERIAL }}" data-nombre="{{ material.NOMBRE }}" data-disponibles="{{ material.CANTIDAD_DISPONIBLE }}">
                                 <td>{{ material.NOMBRE }}</td>
                                 <td>{{ material.CANTIDAD_DISPONIBLE }}</td>
-                                <td><button class="btn btn-sm btn-success btn-agregar-material">+</button></td>
+                                <td><button class="btn btn-sm btn-success btn-agregar-material"><i class="fas fa-plus"></i></button></td>
                             </tr>
                             {% endfor %}
+                             {% if not materiales_disponibles %}
+                            <tr>
+                                <td colspan="3" class="text-center text-muted">No hay materiales con stock disponible.</td>
+                            </tr>
+                            {% endif %}
                         </tbody>
                     </table>
                 </div>
@@ -233,7 +258,7 @@
              <div class="card-section">
                 <h4 class="main-title">Préstamos Activos del Día</h4>
                 <div class="table-responsive">
-                    <table class="table">
+                    <table class="table align-middle">
                         <thead>
                             <tr>
                                 <th>Vale</th>
@@ -246,28 +271,78 @@
                         </thead>
                         <tbody>
                             {% for prestamo in prestamos_activos %}
-                            <tr>
+                            <tr data-id-prestamo="{{ prestamo.ID_PRESTAMO }}">
                                 <td>{{ prestamo.ID_PRESTAMO }}</td>
                                 <td>{{ prestamo.NUMEROCONTROL }} - {{ prestamo.NOMBRE }}</td>
                                 <td>{{ prestamo.MATERIALES_LISTA }}</td>
-                                <td>{{ prestamo.FECHA_HORA.strftime('%d/%m/%Y %H:%M') }}</td>
+                                <td>{{ prestamo.FECHA_HORA_DISPLAY or prestamo.FECHA_HORA }}</td>
                                 <td><span class="status-badge activo">Activo</span></td>
-                                <td>
+                                <td class="text-nowrap">
+                                    <button class="btn btn-sm btn-outline-warning btn-reportar-dano" 
+                                            data-id-prestamo="{{ prestamo.ID_PRESTAMO }}" 
+                                            onclick="openDanoModal(this)">
+                                        <i class="fas fa-exclamation-triangle"></i> Daño
+                                    </button>
                                     <form method="POST" action="{{ url_for('devolver_prestamo') }}" style="display:inline;">
                                         <input type="hidden" name="id_prestamo" value="{{ prestamo.ID_PRESTAMO }}">
-                                        <button type="submit" class="btn btn-sm btn-outline-secondary">Devolver</button>
+                                        <button type="submit" class="btn btn-sm btn-outline-secondary">
+                                            <i class="fas fa-undo-alt"></i> Devolver
+                                        </button>
                                     </form>
                                 </td>
                             </tr>
                             {% endfor %}
+                            {% if not prestamos_activos %}
+                            <tr>
+                                <td colspan="6" class="text-center text-muted">No hay préstamos activos registrados hoy.</td>
+                            </tr>
+                            {% endif %}
                         </tbody>
                     </table>
                 </div>
              </div>
         </div>
     </div>
+    
+    <!-- Modal para Reportar Daño -->
+    <div id="danoModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-exclamation-triangle"></i> Reportar Daño</h2>
+                <span class="close" onclick="closeModal('danoModal')">&times;</span>
+            </div>
+            <form action="{{ url_for('registrar_dano') }}" method="POST">
+                <input type="hidden" id="dano_id_prestamo" name="id_prestamo">
+                <div class="form-group">
+                    <label for="dano_material">Material Dañado</label>
+                    <!-- Este select se llena dinámicamente con JS -->
+                    <select id="dano_material" name="id_material" class="form-control" required>
+                        <option value="">Cargando materiales...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="dano_cantidad">Cantidad Dañada</label>
+                    <input type="number" id="dano_cantidad" name="cantidad_danada" min="1" required>
+                </div>
+                <div class="form-group">
+                    <label for="dano_motivo">Motivo del Daño (Obligatorio)</label>
+                    <textarea id="dano_motivo" name="motivo" class="form-control" rows="3" required></textarea>
+                </div>
+                <div class="d-grid mt-4">
+                    <button type="submit" class="btn btn-danger btn-principal">Registrar Daño y Separar Stock</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
     <script>
+    // Variables globales para la gestión de estado
+    let materialesSeleccionados = {};
+    const materialesDisponiblesData = {}; // Para guardar el stock real por ID
+
     document.addEventListener('DOMContentLoaded', function() {
         const noControlInput = document.getElementById('noControl');
         const nombreAlumnoInput = document.getElementById('nombreAlumno');
@@ -277,30 +352,97 @@
         const materialesSeleccionadosInput = document.getElementById('materialesSeleccionadosInput');
         const placeholderMaterial = document.getElementById('placeholder-material');
         const busquedaMaterialInput = document.getElementById('busquedaMaterial');
+        const danoMaterialSelect = document.getElementById('dano_material');
+        const danoCantidadInput = document.getElementById('dano_cantidad');
 
-        let materialesSeleccionados = {};
 
-        // ✅ --- LÓGICA CORREGIDA PARA BUSCAR ALUMNO --- ✅
+        // Llenar el mapa de stock disponible
+        document.querySelectorAll('#tablaMaterialesBody tr').forEach(fila => {
+            const id = fila.dataset.id;
+            const disponibles = parseInt(fila.dataset.disponibles, 10);
+            materialesDisponiblesData[id] = disponibles;
+        });
+
+
+        // Función para abrir y llenar el modal de Reportar Daño
+        window.openDanoModal = function(button) {
+            const idPrestamo = button.getAttribute('data-id-prestamo');
+            document.getElementById('dano_id_prestamo').value = idPrestamo;
+            
+            // 1. Limpiar y deshabilitar temporalmente el select
+            danoMaterialSelect.innerHTML = '<option value="">Cargando materiales...</option>';
+            danoMaterialSelect.disabled = true;
+            danoCantidadInput.value = 1;
+            danoCantidadInput.max = 1;
+
+
+            // 2. Obtener los materiales específicos de ese préstamo
+            // Esto requiere una llamada AJAX a una nueva ruta en Flask: /api/prestamo/<id_prestamo>/materiales
+            fetch(`/api/prestamo/${idPrestamo}/materiales`)
+                .then(response => {
+                    if (!response.ok) throw new Error('Error al obtener materiales del préstamo');
+                    return response.json();
+                })
+                .then(materiales => {
+                    danoMaterialSelect.innerHTML = '<option value="" selected disabled>Selecciona el material dañado...</option>';
+                    materiales.forEach(m => {
+                        const option = document.createElement('option');
+                        option.value = m.ID_MATERIAL;
+                        // Mostrar cuánto de ese material está AÚN activo en el préstamo
+                        option.textContent = `${m.NOMBRE} (Activo: ${m.CANTIDAD_PRESTADA})`;
+                        danoMaterialSelect.appendChild(option);
+                    });
+
+                    danoMaterialSelect.disabled = false;
+                    openModal('danoModal');
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('No se pudo cargar la lista de materiales prestados para este vale.');
+                    closeModal('danoModal');
+                });
+        }
+        
+        // 3. Establecer la cantidad máxima del material dañado al seleccionar
+        danoMaterialSelect.addEventListener('change', function() {
+            const selectedId = this.value;
+            const option = this.querySelector(`option[value="${selectedId}"]`);
+            // Extraer la cantidad activa del texto del option (ej: "Activo: 5")
+            if (option) {
+                const text = option.textContent;
+                const match = text.match(/\(Activo:\s*(\d+)\)/);
+                if (match && match[1]) {
+                    const maxCant = parseInt(match[1], 10);
+                    danoCantidadInput.max = maxCant;
+                    danoCantidadInput.value = 1;
+                    if (maxCant === 0) {
+                        alert("No hay unidades activas restantes para reportar daño en este material.");
+                        danoCantidadInput.value = 0;
+                    }
+                }
+            }
+        });
+
+
+        // ✅ --- LÓGICA BUSCAR ALUMNO --- ✅
         noControlInput.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
                 const noControl = this.value.trim();
                 if (noControl) {
-                    // Limpiamos los campos antes de la búsqueda
                     nombreAlumnoInput.value = 'Buscando...';
                     semestreInput.value = '';
 
                     fetch(`/api/alumno/${noControl}`)
                         .then(response => {
-                            if (!response.ok) {
-                                throw new Error('Respuesta del servidor no fue OK');
-                            }
+                            if (!response.ok) throw new Error('Alumno no encontrado o error en el servidor.');
                             return response.json();
                         })
                         .then(data => {
                             if (data.error) {
                                 alert(data.error);
                                 nombreAlumnoInput.value = '';
+                                semestreInput.value = '';
                             } else {
                                 nombreAlumnoInput.value = data.NOMBRE;
                                 semestreInput.value = data.SEMESTRE;
@@ -316,12 +458,13 @@
             }
         });
         
+        // ✅ --- LÓGICA SELECCIÓN DE MATERIAL --- ✅
         tablaMaterialesBody.addEventListener('click', function(e) {
-            if (e.target && e.target.classList.contains('btn-agregar-material')) {
+            if (e.target && e.target.closest('.btn-agregar-material')) {
                 const fila = e.target.closest('tr');
                 const id = fila.dataset.id;
                 const nombre = fila.dataset.nombre;
-                const maxDisponibles = parseInt(fila.dataset.disponibles, 10);
+                const maxDisponibles = materialesDisponiblesData[id];
 
                 if (materialesSeleccionados[id] >= maxDisponibles) {
                     alert(`No hay más stock disponible para "${nombre}".`);
@@ -329,11 +472,13 @@
                 }
                 
                 const cantidadActual = materialesSeleccionados[id] || 0;
-                const cantidadInput = prompt(`¿Qué cantidad de "${nombre}" deseas agregar? (Disponibles: ${maxDisponibles - cantidadActual})`, 1);
+                const cantidadRestante = maxDisponibles - cantidadActual;
+                
+                const cantidadInput = prompt(`¿Qué cantidad de "${nombre}" deseas agregar? (Disponibles: ${cantidadRestante})`, 1);
                 
                 if (cantidadInput) {
                     const cantidad = parseInt(cantidadInput, 10);
-                    if (!isNaN(cantidad) && cantidad > 0 && (cantidad + cantidadActual) <= maxDisponibles) {
+                    if (!isNaN(cantidad) && cantidad > 0 && cantidad <= cantidadRestante) {
                         materialesSeleccionados[id] = (materialesSeleccionados[id] || 0) + cantidad;
                         actualizarListaVisual();
                     } else {
@@ -345,12 +490,12 @@
         
         function actualizarListaVisual() {
             listaMaterialSeleccionado.innerHTML = '';
+            let hayMaterial = false;
             
-            if (Object.keys(materialesSeleccionados).length === 0) {
-                 if(placeholderMaterial) listaMaterialSeleccionado.appendChild(placeholderMaterial);
-            } else {
-                 for (const id in materialesSeleccionados) {
-                    const cantidad = materialesSeleccionados[id];
+            for (const id in materialesSeleccionados) {
+                const cantidad = materialesSeleccionados[id];
+                if (cantidad > 0) {
+                    hayMaterial = true;
                     const filaMaterial = tablaMaterialesBody.querySelector(`tr[data-id='${id}']`);
                     const nombre = filaMaterial ? filaMaterial.dataset.nombre : 'Material desconocido';
                     
@@ -362,6 +507,11 @@
                     listaMaterialSeleccionado.appendChild(li);
                 }
             }
+
+            if (!hayMaterial) {
+                 listaMaterialSeleccionado.appendChild(placeholderMaterial);
+            }
+
             materialesSeleccionadosInput.value = JSON.stringify(materialesSeleccionados);
         }
 
@@ -373,20 +523,40 @@
             }
         });
 
+        // ✅ --- LÓGICA DE BÚSQUEDA/FILTRO DE MATERIAL --- ✅
         busquedaMaterialInput.addEventListener('keyup', function() {
             const filtro = this.value.toUpperCase();
             const filas = tablaMaterialesBody.getElementsByTagName('tr');
             
             for (let i = 0; i < filas.length; i++) {
-                let textoFila = filas[i].textContent || filas[i].innerText;
-                if (textoFila.toUpperCase().indexOf(filtro) > -1) {
+                let textoNombre = filas[i].getElementsByTagName('td')[0].textContent || filas[i].getElementsByTagName('td')[0].innerText;
+                if (textoNombre.toUpperCase().indexOf(filtro) > -1) {
                     filas[i].style.display = "";
                 } else {
                     filas[i].style.display = "none";
                 }
             }
         });
+
+        // ✅ --- LÓGICA DE MODALES GENERALES --- ✅
+        window.openModal = function(modalId) {
+            document.getElementById(modalId).style.display = "block";
+        }
+
+        window.closeModal = function(modalId) {
+            document.getElementById(modalId).style.display = "none";
+        }
+
+        window.onclick = function(event) {
+            const modals = document.getElementsByClassName('modal');
+            for (let i = 0; i < modals.length; i++) {
+                if (event.target == modals[i]) {
+                    modals[i].style.display = "none";
+                }
+            }
+        }
     });
     </script>
 </body>
 </html>
+

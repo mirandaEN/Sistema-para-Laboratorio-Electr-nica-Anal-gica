@@ -3,197 +3,247 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard de Reportes</title>
-    <!-- Font Awesome para los iconos -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; color: #333; }
-        .container { max-width: 1200px; margin: auto; }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .header h1 { margin: 0; color: #2c3e50; }
-        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }
-        .kpi-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.05); display: flex; align-items: center; }
-        .kpi-card .icon { font-size: 2.5em; color: #3498db; margin-right: 20px; width: 60px; text-align: center; }
-        .kpi-card .info h3 { margin: 0; font-size: 1em; color: #555; }
-        .kpi-card .info p { margin: 5px 0 0; font-size: 2em; font-weight: 700; color: #2c3e50; }
-        .report-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
-        .report-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.05); }
-        .report-card h3 { margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px; font-size: 1.2em; color: #34495e; }
-        .chart-container { position: relative; height: 300px; }
-        .list { list-style: none; padding: 0; margin: 0; }
-        .list-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f0f0f0; }
-        .list-item:last-child { border-bottom: none; }
-        .list-item .name { font-weight: 600; }
-        .list-item .count { background: #eaf2f8; color: #3498db; padding: 3px 8px; border-radius: 12px; font-size: 0.9em; font-weight: bold; }
-        .incident-list .minimal-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        .incident-list .minimal-table th, .incident-list .minimal-table td { text-align: left; padding: 8px; border-bottom: 1px solid #eee; }
-        .incident-list .minimal-table th { font-weight: 600; color: #555; }
-        .incident-list .incident-count { background-color: #d9534f; color: white; padding: 3px 8px; border-radius: 50%; font-weight: bold; }
-    </style>
-    <!-- Chart.js para los gráficos -->
+    <title>Reportes - Laboratorio</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: #f4f7f6; color: #333; margin: 0; padding: 20px; }
+        .main-header { max-width: 1400px; margin: 0 auto 30px auto; background: #fff; padding: 20px 30px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; border-left: 5px solid #005a9c; }
+        .header-content { display: flex; align-items: center; }
+        .logo { height: 50px; margin-right: 20px; }
+        .header-text h1 { font-size: 1.5em; color: #005a9c; margin: 0; font-weight: 600; }
+        .header-text h2 { font-size: 1.2em; color: #555; margin: 0; font-weight: 300; }
+        .header-actions a { background-color: #b81717; color: #fff; padding: 10px 15px; border-radius: 5px; text-decoration: none; transition: background-color 0.2s; margin-left: 15px; }
+        .header-actions a:hover { background-color: #961313; }
+        .excel-btn { background-color: #218838 !important; }
+        .excel-btn:hover { background-color: #1e7e34 !important; }
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 25px; max-width: 1400px; margin: 20px auto; }
+        .card { background: #fff; padding: 25px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.07); }
+        .card h3 { margin-top: 0; font-size: 1.2em; color: #005a9c; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
+        .kpi-card { text-align: center; }
+        .kpi-value { font-size: 2.5em; font-weight: 700; color: #005a9c; }
+        .kpi-label { font-size: 1em; color: #6c757d; margin-top: 5px; }
+        .list { list-style: none; padding: 0; }
+        .list li { background-color: #f8f9fa; padding: 10px; border-radius: 4px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+        .list .value { font-weight: 600; background-color: #920000; color: white; padding: 3px 8px; border-radius: 10px; font-size: 0.9em; }
+        .list .date { font-size: 0.85em; color: #888; }
+        .grid-col-span-2 { grid-column: span 2; }
+        @media (max-width: 1200px) { .grid-col-span-2 { grid-column: span 1; } }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1><i class="fas fa-chart-line"></i> Dashboard de Reportes del Día</h1>
+
+    <header class="main-header">
+        <div class="header-content">
+            <img src="{{ url_for('static', filename='sources/itislogo.png') }}" alt="Logo ITS" class="logo">
+            <div class="header-text">
+                <h1>Instituto Tecnológico de Saltillo</h1>
+                <h2>Reportes</h2>
+            </div>
+        </div>
+        <div class="header-actions">
+            <a href="{{ url_for('interface_admin') }}">Volver al Panel</a>
+            <a href="{{ url_for('descargar_reporte_excel') }}" class="excel-btn">Descargar Reporte en Excel</a>
+        </div>
+    </header>
+
+    <div class="dashboard-grid">
+        <!-- KPI: Tiempo Promedio de Préstamo -->
+        <div class="card kpi-card">
+            <h3>Tiempo Promedio de Préstamo</h3>
+            <div class="kpi-value">{{ datos.tiempo_promedio_prestamo }}</div>
+            <div class="kpi-label">Minutos</div>
+        </div>
+
+        <!-- Tabla: Préstamos Vencidos -->
+        <div class="card">
+            <h3>Alumnos con Préstamos Vencidos</h3>
+            {% if datos.prestamos_vencidos %}
+            <ul class="list">
+                {% for item in datos.prestamos_vencidos %}
+                <li>
+                    <span>{{ item.NOMBRE }} ({{ item.NUMEROCONTROL }})</span>
+                    <span class="date">Inició: {{ item.FECHA_HORA[:19] }}</span>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p>No hay préstamos vencidos actualmente.</p>
+            {% endif %}
+        </div>
+
+        <!-- Gráfico: Top 5 Materiales Más Pedidos -->
+        <div class="card">
+            <h3>Top 5 Materiales Más Pedidos</h3>
+            <canvas id="topMaterialesChart"></canvas>
         </div>
         
-        <!-- Tarjetas de KPIs -->
-        <div class="kpi-grid">
-            <div class="kpi-card">
-                <div class="icon"><i class="fas fa-exchange-alt"></i></div>
-                <div class="info">
-                    <h3>Préstamos Totales Hoy</h3>
-                    <p>{{ datos.total_prestamos_hoy or 0 }}</p>
-                </div>
-            </div>
-            <div class="kpi-card">
-                <div class="icon"><i class="fas fa-boxes"></i></div>
-                <div class="info">
-                    <h3>Total de Items en Stock</h3>
-                    <p>{{ datos.total_stock or 0 }}</p>
-                </div>
-            </div>
-            <div class="kpi-card">
-                <div class="icon"><i class="fas fa-users"></i></div>
-                <div class="info">
-                    <h3>Inicios de Sesión (Auxiliares)</h3>
-                    <p>{{ datos.auxiliares_activos or 0 }}</p>
-                </div>
-            </div>
+        <!-- Gráfico: Préstamos por Hora (Hoy) -->
+        <div class="card grid-col-span-2">
+            <h3>Préstamos por Hora (Día de Hoy)</h3>
+            <canvas id="prestamosHoraChart"></canvas>
         </div>
 
-        <div class="report-grid">
-            <!-- Gráfico de Barras Principal -->
-            <div class="report-card">
-                <h3><i class="fas fa-user-clock"></i> Actividad de Préstamos por Auxiliar (Hoy)</h3>
-                <div class="chart-container">
-                    <canvas id="graficoTurnos"></canvas>
-                </div>
-            </div>
-
-            <!-- Gráfico de Dona -->
-            <div class="report-card">
-                <h3><i class="fas fa-star"></i> Top 5 Materiales Prestados Hoy</h3>
-                <div class="chart-container">
-                    <canvas id="graficoTopMateriales"></canvas>
-                </div>
-            </div>
-
-            <!-- Incidentes y Bajo Stock -->
-            <div class="report-card">
-                <h3><i class="fas fa-exclamation-triangle"></i> Incidentes de Cierre de Sesión</h3>
-                <div class="incident-list">
-                    {% if datos.incidentes_cierre_sesion %}
-                        <table class="minimal-table">
-                            <thead><tr><th>Auxiliar</th><th>Préstamos Pendientes</th><th>Hora</th></tr></thead>
-                            <tbody>
-                                {% for incidente in datos.incidentes_cierre_sesion %}
-                                    <tr>
-                                        <td>{{ incidente.USUARIO }}</td>
-                                        <td><span class="incident-count">{{ incidente.PRESTAMOS_PENDIENTES }}</span></td>
-                                        <td>{{ incidente.FECHA_HORA.strftime('%H:%M:%S') }}</td>
-                                    </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    {% else %}
-                        <p>No se han registrado incidentes hoy.</p>
-                    {% endif %}
-                </div>
-            </div>
-            <div class="report-card">
-                <h3><i class="fas fa-battery-quarter"></i> Materiales con Bajo Stock (5 o menos)</h3>
-                <ul class="list">
-                    {% if datos.materiales_bajo_stock %}
-                        {% for material in datos.materiales_bajo_stock %}
-                            <li class="list-item">
-                                <span class="name">{{ material.NOMBRE }}</span>
-                                <span class="count">{{ material.CANTIDAD_DISPONIBLE }}</span>
-                            </li>
-                        {% endfor %}
-                    {% else %}
-                        <p>No hay materiales con bajo stock.</p>
-                    {% endif %}
-                </ul>
-            </div>
+        <!-- Tabla: Top 5 Semestres -->
+        <div class="card">
+            <h3>Top 5 Semestres (Más Préstamos)</h3>
+            {% if datos.top_semestres %}
+            <ul class="list">
+                {% for item in datos.top_semestres %}
+                <li><span>{{ item.SEMESTRE }}° Semestre</span> <span class="value">{{ item.TOTAL_PRESTAMOS }}</span></li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p>No hay datos de préstamos para mostrar.</p>
+            {% endif %}
         </div>
-    </div>
 
-    <!-- Contenedor de datos oculto para pasar datos de Flask a JavaScript de forma segura -->
-    <div id="chart-data" 
-         data-turnos='{{ datos.prestamos_por_turno | tojson | safe }}'
-         data-top-materiales='{{ datos.top_materiales_hoy | tojson | safe }}'
-         style="display: none;">
+        <!-- Tabla: Materiales más Dañados -->
+        <div class="card">
+            <h3>Top 5 Materiales Más Dañados</h3>
+            {% if datos.top_danos %}
+            <ul class="list">
+                {% for item in datos.top_danos %}
+                <li><span>{{ item.NOMBRE }}</span> <span class="value">{{ item.TOTAL_DANADO }}</span></li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p>No se han registrado daños.</p>
+            {% endif %}
+        </div>
+
+        <!-- Tabla: Stock Muerto -->
+        <div class="card">
+            <h3>Materiales Nunca Prestados (Stock Muerto)</h3>
+            {% if datos.stock_muerto %}
+            <ul class="list">
+                {% for item in datos.stock_muerto %}
+                <li><span>{{ item.NOMBRE }}</span> <span class="value">Stock: {{ item.CANTIDAD_DISPONIBLE }}</span></li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p>Todos los materiales han sido prestados al menos una vez.</p>
+            {% endif %}
+        </div>
+        
+        <!-- Tabla: Logins Fallidos de Auxiliares -->
+        <div class="card">
+            <h3>Intentos de Login Fallidos (Auxiliares)</h3>
+            {% if datos.logins_fallidos %}
+            <ul class="list">
+                {% for item in datos.logins_fallidos %}
+                <li><span>{{ item.USUARIO }}</span> <span class="value">{{ item.INTENTOS_FALLIDOS }} intentos</span></li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p>No hay registros de intentos fallidos.</p>
+            {% endif %}
+        </div>
+
     </div>
 
     <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            const dataContainer = document.getElementById('chart-data');
+        document.addEventListener('DOMContentLoaded', function () {
+            // Datos para el gráfico de préstamos por hora
+            const prestamosData = {{ datos.prestamos_por_hora | tojson | safe }};
+            const labels = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0') + ':00');
+            const data = Array(24).fill(0);
+            const auxiliaresPorHora = Array(24).fill(''); // Nuevo array para los nombres de auxiliares
 
-            // 1. Gráfico de Barras Apiladas: Préstamos por Turno
-            try {
-                const ctxTurnos = document.getElementById('graficoTurnos').getContext('2d');
-                const datosTurnos = JSON.parse(dataContainer.dataset.turnos || '[]')
-                
-                if (datosTurnos.length > 0) {
-                    const labels = datosTurnos.map(d => d.USUARIO);
-                    const devueltosData = datosTurnos.map(d => (d.PRESTAMOS_EN_TURNO || 0) - (d.PRESTAMOS_PENDIENTES || 0));
-                    const pendientesData = datosTurnos.map(d => d.PRESTAMOS_PENDIENTES || 0);
-
-                    new Chart(ctxTurnos, {
-                        type: 'bar',
-                        data: {
-                            labels: labels,
-                            datasets: [{
-                                label: 'Préstamos Devueltos Hoy',
-                                data: devueltosData,
-                                backgroundColor: 'rgba(54, 162, 235, 0.7)', // Azul
-                            }, {
-                                label: 'Préstamos Pendientes Hoy',
-                                data: pendientesData,
-                                backgroundColor: 'rgba(255, 99, 132, 0.7)', // Rojo
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: { legend: { position: 'top' } },
-                            scales: {
-                                x: { stacked: true },
-                                y: { stacked: true, beginAtZero: true, ticks: { stepSize: 1 } }
-                            }
-                        }
-                    });
-                }
-            } catch (e) {
-                console.error("Error al renderizar el gráfico de turnos:", e);
+            if (prestamosData) {
+                prestamosData.forEach(item => {
+                    const hourIndex = parseInt(item.HORA, 10);
+                    if (hourIndex >= 0 && hourIndex < 24) {
+                        data[hourIndex] = item.TOTAL;
+                        auxiliaresPorHora[hourIndex] = item.AUXILIARES || ''; // Guardamos los nombres
+                    }
+                });
             }
 
-            // 2. Gráfico de Dona: Top 5 Materiales
-            try {
-                const ctxTopMateriales = document.getElementById('graficoTopMateriales').getContext('2d');
-                const datosTopMateriales = JSON.parse(dataContainer.dataset.topMateriales || '[]');
-                
-                if (datosTopMateriales.length > 0) {
-                    const labels = datosTopMateriales.map(d => d.NOMBRE);
-                    const data = datosTopMateriales.map(d => d.TOTAL);
-                    const backgroundColors = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'];
-                    
-                    new Chart(ctxTopMateriales, {
-                        type: 'doughnut',
-                        data: {
-                            labels: labels,
-                            datasets: [{ data: data, backgroundColor: backgroundColors.slice(0, data.length) }]
+            const ctx = document.getElementById('prestamosHoraChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Número de Préstamos',
+                        data: data,
+                        backgroundColor: 'rgba(0, 90, 156, 0.6)',
+                        borderColor: 'rgba(0, 90, 156, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
                         },
-                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } } }
-                    });
+                        tooltip: {
+                            callbacks: {
+                                // Esta función personaliza el texto del tooltip
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ' + context.parsed.y;
+                                    }
+                                    const index = context.dataIndex;
+                                    const auxiliares = auxiliaresPorHora[index];
+                                    if (auxiliares) {
+                                        // Devuelve un array de strings para un tooltip multilínea
+                                        return [label, 'Auxiliares: ' + auxiliares];
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
                 }
-            } catch (e) {
-                console.error("Error al renderizar el gráfico de top materiales:", e);
+            });
+
+            // Datos para el gráfico de Top Materiales Pedidos
+            const topMaterialesData = {{ datos.top_materiales_pedidos | tojson | safe }};
+            if (topMaterialesData && topMaterialesData.length > 0) {
+                const topMaterialesLabels = topMaterialesData.map(item => item.NOMBRE);
+                const topMaterialesValues = topMaterialesData.map(item => item.TOTAL);
+
+                const ctxTopMateriales = document.getElementById('topMaterialesChart').getContext('2d');
+                new Chart(ctxTopMateriales, {
+                    type: 'doughnut',
+                    data: {
+                        labels: topMaterialesLabels,
+                        datasets: [{
+                            label: 'Total Pedido',
+                            data: topMaterialesValues,
+                            backgroundColor: [
+                                'rgba(0, 90, 156, 0.7)',
+                                'rgba(23, 162, 184, 0.7)',
+                                'rgba(40, 167, 69, 0.7)',
+                                'rgba(255, 193, 7, 0.7)',
+                                'rgba(220, 53, 69, 0.7)'
+                            ],
+                            borderColor: '#fff',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            }
+                        }
+                    }
+                });
             }
         });
     </script>
 </body>
 </html>
+
